@@ -75,7 +75,7 @@ const ReductionActions = () => {
         { id: "led-lighting", title: "LED照明系統", impact: "中", difficulty: "簡單", co2Saved: 0.8, cost: 150000, description: "全面更換LED節能照明" },
         { id: "hvac-optimization", title: "空調系統優化", impact: "高", difficulty: "中等", co2Saved: 2.0, cost: 300000, description: "升級高效率空調系統" },
         { id: "solar-panels", title: "太陽能發電系統", impact: "高", difficulty: "困難", co2Saved: 4.5, cost: 1200000, description: "安裝屋頂太陽能板" },
-        { id: "energy-monitoring", title: "能源監控系統", impact: "中", difficulty: "中等", co2Saved: 1.2, cost: 250000, description = "即時監控各區域用電狀況" }
+        { id: "energy-monitoring", title: "能源監控系統", impact: "中", difficulty: "中等", co2Saved: 1.2, cost: 250000, description: "即時監控各區域用電狀況" }
       ]
     },
     {
