@@ -1,0 +1,280 @@
+
+import { useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
+import { 
+  Target, 
+  CheckCircle2, 
+  Plus, 
+  ArrowLeft,
+  Lightbulb,
+  Car,
+  Home,
+  Utensils,
+  Shirt,
+  Award
+} from "lucide-react";
+import { Link } from "react-router-dom";
+
+const ReductionActions = () => {
+  const [completedActions, setCompletedActions] = useState<string[]>([]);
+
+  const actionCategories = [
+    {
+      id: "energy",
+      title: "節能減碳",
+      icon: Lightbulb,
+      color: "bg-yellow-500",
+      actions: [
+        { id: "led", title: "更換LED燈具", impact: "高", difficulty: "簡單", co2Saved: 0.5 },
+        { id: "thermostat", title: "調整空調溫度設定", impact: "中", difficulty: "簡單", co2Saved: 0.3 },
+        { id: "unplug", title: "拔除待機電器插頭", impact: "低", difficulty: "簡單", co2Saved: 0.1 },
+        { id: "efficient-appliances", title: "選購節能家電", impact: "高", difficulty: "中等", co2Saved: 0.8 }
+      ]
+    },
+    {
+      id: "transport",
+      title: "綠色交通",
+      icon: Car,
+      color: "bg-blue-500",
+      actions: [
+        { id: "public-transport", title: "使用大眾運輸工具", impact: "高", difficulty: "簡單", co2Saved: 1.2 },
+        { id: "bike", title: "騎自行車或步行", impact: "高", difficulty: "簡單", co2Saved: 1.5 },
+        { id: "carpool", title: "共乘或拼車", impact: "中", difficulty: "中等", co2Saved: 0.6 },
+        { id: "electric-vehicle", title: "使用電動車", impact: "高", difficulty: "困難", co2Saved: 2.0 }
+      ]
+    },
+    {
+      id: "lifestyle",
+      title: "生活方式",
+      icon: Home,
+      color: "bg-green-500",
+      actions: [
+        { id: "recycle", title: "垃圾分類回收", impact: "中", difficulty: "簡單", co2Saved: 0.2 },
+        { id: "reduce-plastic", title: "減少塑膠製品使用", impact: "中", difficulty: "簡單", co2Saved: 0.3 },
+        { id: "local-products", title: "選購在地產品", impact: "中", difficulty: "中等", co2Saved: 0.4 },
+        { id: "minimal-packaging", title: "選擇簡約包裝", impact: "低", difficulty: "簡單", co2Saved: 0.1 }
+      ]
+    },
+    {
+      id: "consumption",
+      title: "消費習慣",
+      icon: Shirt,
+      color: "bg-purple-500",
+      actions: [
+        { id: "buy-less", title: "減少不必要消費", impact: "高", difficulty: "中等", co2Saved: 1.0 },
+        { id: "second-hand", title: "購買二手商品", impact: "中", difficulty: "簡單", co2Saved: 0.5 },
+        { id: "repair", title: "修理而非丟棄", impact: "中", difficulty: "中等", co2Saved: 0.4 },
+        { id: "sharing", title: "共享經濟參與", impact: "中", difficulty: "簡單", co2Saved: 0.3 }
+      ]
+    }
+  ];
+
+  const toggleAction = (actionId: string) => {
+    if (completedActions.includes(actionId)) {
+      setCompletedActions(completedActions.filter(id => id !== actionId));
+    } else {
+      setCompletedActions([...completedActions, actionId]);
+    }
+  };
+
+  const getTotalCO2Saved = () => {
+    let total = 0;
+    actionCategories.forEach(category => {
+      category.actions.forEach(action => {
+        if (completedActions.includes(action.id)) {
+          total += action.co2Saved;
+        }
+      });
+    });
+    return total;
+  };
+
+  const getTotalActions = () => {
+    return actionCategories.reduce((total, category) => total + category.actions.length, 0);
+  };
+
+  const getImpactColor = (impact: string) => {
+    switch (impact) {
+      case "高": return "bg-red-100 text-red-800";
+      case "中": return "bg-yellow-100 text-yellow-800";
+      default: return "bg-green-100 text-green-800";
+    }
+  };
+
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case "困難": return "bg-red-100 text-red-800";
+      case "中等": return "bg-yellow-100 text-yellow-800";
+      default: return "bg-green-100 text-green-800";
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm">
+        <div className="px-6 py-4 mx-auto max-w-7xl">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Link to="/">
+                <Button variant="ghost" size="sm">
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  返回首頁
+                </Button>
+              </Link>
+              <div className="flex items-center space-x-2">
+                <Target className="w-6 h-6 text-green-600" />
+                <h1 className="text-2xl font-bold text-gray-900">減碳行動清單</h1>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-6 py-8 mx-auto max-w-7xl">
+        {/* Progress Overview */}
+        <div className="mb-8">
+          <Card className="shadow-lg bg-gradient-to-r from-green-600 to-emerald-600 text-white">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Award className="w-6 h-6" />
+                <span>您的減碳成果</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-3 gap-6">
+                <div className="text-center">
+                  <div className="text-3xl font-bold mb-2">{completedActions.length}</div>
+                  <div className="text-sm opacity-90">已完成行動</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold mb-2">{getTotalCO2Saved().toFixed(1)} 噸</div>
+                  <div className="text-sm opacity-90">預估年減碳量</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold mb-2">
+                    {Math.round((completedActions.length / getTotalActions()) * 100)}%
+                  </div>
+                  <div className="text-sm opacity-90">完成度</div>
+                </div>
+              </div>
+              <Progress 
+                value={(completedActions.length / getTotalActions()) * 100} 
+                className="mt-6 bg-white/20"
+              />
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">行動分類</h2>
+          <p className="text-gray-600">選擇適合您的減碳行動，每一個小步驟都能累積成大改變</p>
+        </div>
+
+        {/* Action Categories */}
+        <div className="space-y-8">
+          {actionCategories.map((category) => {
+            const IconComponent = category.icon;
+            const categoryCompleted = category.actions.filter(action => 
+              completedActions.includes(action.id)
+            ).length;
+            
+            return (
+              <Card key={category.id} className="shadow-lg">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className={`w-12 h-12 ${category.color} rounded-full flex items-center justify-center`}>
+                        <IconComponent className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-xl">{category.title}</CardTitle>
+                        <CardDescription>
+                          {categoryCompleted} / {category.actions.length} 已完成
+                        </CardDescription>
+                      </div>
+                    </div>
+                    <Progress 
+                      value={(categoryCompleted / category.actions.length) * 100}
+                      className="w-32"
+                    />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {category.actions.map((action) => {
+                      const isCompleted = completedActions.includes(action.id);
+                      return (
+                        <div
+                          key={action.id}
+                          className={`p-4 border rounded-lg cursor-pointer transition-all duration-200 ${
+                            isCompleted 
+                              ? 'bg-green-50 border-green-200' 
+                              : 'bg-white border-gray-200 hover:border-gray-300'
+                          }`}
+                          onClick={() => toggleAction(action.id)}
+                        >
+                          <div className="flex items-start space-x-3">
+                            <Checkbox
+                              checked={isCompleted}
+                              onChange={() => toggleAction(action.id)}
+                              className="mt-1"
+                            />
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between mb-2">
+                                <h3 className={`font-medium ${isCompleted ? 'line-through text-gray-500' : ''}`}>
+                                  {action.title}
+                                </h3>
+                                {isCompleted && <CheckCircle2 className="w-5 h-5 text-green-500" />}
+                              </div>
+                              <div className="flex items-center space-x-2 mb-2">
+                                <Badge variant="secondary" className={getImpactColor(action.impact)}>
+                                  影響：{action.impact}
+                                </Badge>
+                                <Badge variant="secondary" className={getDifficultyColor(action.difficulty)}>
+                                  難度：{action.difficulty}
+                                </Badge>
+                              </div>
+                              <div className="text-sm text-gray-600">
+                                預估年減碳量：{action.co2Saved} 噸 CO2
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+
+        {/* Quick Add Section */}
+        <Card className="shadow-lg mt-8">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Plus className="w-5 h-5" />
+              <span>自訂行動</span>
+            </CardTitle>
+            <CardDescription>
+              添加您自己的減碳行動項目
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button variant="outline" className="w-full">
+              <Plus className="w-4 h-4 mr-2" />
+              新增自訂行動
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default ReductionActions;
