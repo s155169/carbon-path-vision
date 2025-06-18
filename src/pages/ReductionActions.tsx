@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,7 +21,10 @@ import {
   Building2,
   DollarSign,
   Calendar,
-  Filter
+  Filter,
+  Download,
+  BarChart3,
+  Grid3X3
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -174,7 +176,80 @@ const ReductionActions = () => {
     }
   };
 
+  const getSelectedActions = () => {
+    const selected = [];
+    filteredCategories.forEach(category => {
+      category.actions.forEach(action => {
+        if (completedActions.includes(action.id)) {
+          selected.push({
+            ...action,
+            category: category.title,
+            categoryIcon: category.icon
+          });
+        }
+      });
+    });
+    return selected;
+  };
+
+  const getMatrixQuadrant = (cost: number, difficulty: string) => {
+    const isHighCost = cost > 50000;
+    const isHighDifficulty = difficulty === "困難" || difficulty === "中等";
+    
+    if (!isHighCost && !isHighDifficulty) return "speed"; // 速效方案
+    if (isHighCost && !isHighDifficulty) return "value"; // 高CP值方案
+    if (!isHighCost && isHighDifficulty) return "strategy"; // 策略投資
+    return "major"; // 重大專案
+  };
+
+  const getQuadrantData = () => {
+    const selectedActions = getSelectedActions();
+    const quadrants = {
+      speed: [],
+      value: [],
+      strategy: [],
+      major: []
+    };
+
+    selectedActions.forEach(action => {
+      const quadrant = getMatrixQuadrant(action.cost, action.difficulty);
+      quadrants[quadrant].push(action);
+    });
+
+    return quadrants;
+  };
+
+  const exportPlan = () => {
+    const selectedActions = getSelectedActions();
+    const quadrants = getQuadrantData();
+    
+    const planData = {
+      summary: {
+        totalActions: selectedActions.length,
+        totalCO2Saved: getTotalCO2Saved(),
+        totalCost: getTotalCost(),
+        industry: selectedIndustry,
+        budget: budget
+      },
+      actions: selectedActions,
+      matrix: quadrants,
+      exportDate: new Date().toLocaleDateString('zh-TW')
+    };
+
+    const dataStr = JSON.stringify(planData, null, 2);
+    const dataBlob = new Blob([dataStr], {type: 'application/json'});
+    
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `減碳行動計畫_${new Date().toISOString().slice(0,10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const filteredCategories = getFilteredCategories();
+  const selectedActions = getSelectedActions();
+  const quadrantData = getQuadrantData();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-50">
@@ -306,64 +381,205 @@ const ReductionActions = () => {
             variant={showPlan ? "default" : "outline"}
           >
             <Calendar className="w-4 h-4" />
-            <span>檢視行動計畫</span>
+            <span>專屬行動計畫</span>
           </Button>
         </div>
 
-        {/* Action Plan View */}
+        {/* Enhanced Action Plan View */}
         {showPlan && (
-          <Card className="shadow-lg mb-8">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Calendar className="w-5 h-5" />
-                <span>行動計畫</span>
-              </CardTitle>
-              <CardDescription>
-                您已選擇的減碳行動摘要
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {completedActions.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <Target className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>尚未選擇任何行動項目</p>
-                  <p className="text-sm">開始勾選下方的減碳行動來建立您的計畫</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {filteredCategories.map((category) => {
-                    const categoryActions = category.actions.filter(action => 
-                      completedActions.includes(action.id)
-                    );
-                    
-                    if (categoryActions.length === 0) return null;
-                    
-                    return (
-                      <div key={category.id} className="border rounded-lg p-4">
-                        <h4 className="font-semibold text-lg mb-3 flex items-center space-x-2">
-                          <category.icon className="w-5 h-5" />
-                          <span>{category.title}</span>
-                        </h4>
-                        <div className="grid md:grid-cols-2 gap-3">
-                          {categoryActions.map((action) => (
-                            <div key={action.id} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+          <div className="space-y-8 mb-8">
+            {completedActions.length === 0 ? (
+              <Card className="shadow-lg">
+                <CardContent className="text-center py-12">
+                  <Target className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">尚未選擇任何行動項目</h3>
+                  <p className="text-gray-600">請先選擇下方的減碳行動來建立您的專屬計畫</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                {/* Action Summary */}
+                <Card className="shadow-lg">
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center space-x-2">
+                        <BarChart3 className="w-5 h-5" />
+                        <span>行動摘要</span>
+                      </CardTitle>
+                      <CardDescription>您的減碳行動計畫總覽</CardDescription>
+                    </div>
+                    <Button onClick={exportPlan} className="flex items-center space-x-2">
+                      <Download className="w-4 h-4" />
+                      <span>匯出計畫</span>
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid md:grid-cols-3 gap-6">
+                      <div className="text-center p-4 bg-blue-50 rounded-lg">
+                        <div className="text-2xl font-bold text-blue-600 mb-2">{selectedActions.length}</div>
+                        <div className="text-sm text-blue-800">選擇行動數</div>
+                      </div>
+                      <div className="text-center p-4 bg-green-50 rounded-lg">
+                        <div className="text-2xl font-bold text-green-600 mb-2">{getTotalCO2Saved().toFixed(1)} 噸</div>
+                        <div className="text-sm text-green-800">年減碳量</div>
+                      </div>
+                      <div className="text-center p-4 bg-orange-50 rounded-lg">
+                        <div className="text-2xl font-bold text-orange-600 mb-2">NT$ {getTotalCost().toLocaleString()}</div>
+                        <div className="text-sm text-orange-800">總投資金額</div>
+                      </div>
+                    </div>
+
+                    <div className="mt-6">
+                      <h4 className="font-semibold mb-3">行動效益分析</h4>
+                      <div className="space-y-3">
+                        {selectedActions.map((action) => (
+                          <div key={action.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div className="flex items-center space-x-3">
+                              <CheckCircle2 className="w-5 h-5 text-green-500" />
                               <div>
                                 <div className="font-medium">{action.title}</div>
-                                <div className="text-sm text-gray-600">
-                                  減碳: {action.co2Saved} 噸/年 | 成本: NT$ {action.cost.toLocaleString()}
+                                <div className="text-sm text-gray-600">{action.category}</div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-sm font-medium text-green-600">
+                                {action.co2Saved} 噸 CO2/年
+                              </div>
+                              <div className="text-sm text-gray-600">
+                                NT$ {action.cost.toLocaleString()}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* 2x2 Matrix Analysis */}
+                <Card className="shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Grid3X3 className="w-5 h-5" />
+                      <span>2x2矩陣分析：投資級距 vs. 執行難度</span>
+                    </CardTitle>
+                    <CardDescription>策略性分析您的減碳行動組合</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 gap-4 h-96">
+                      {/* 速效方案 - 低投資/低難度 */}
+                      <Card className="bg-green-50 border-green-200">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm text-green-800">速效方案</CardTitle>
+                          <CardDescription className="text-xs">低投資/低難度</CardDescription>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <div className="space-y-2">
+                            {quadrantData.speed.map((action) => (
+                              <div key={action.id} className="text-xs p-2 bg-white rounded border">
+                                <div className="font-medium">{action.title}</div>
+                                <div className="text-gray-600">
+                                  {action.co2Saved}噸 | NT${action.cost.toLocaleString()}
                                 </div>
                               </div>
-                              <CheckCircle2 className="w-5 h-5 text-green-500" />
-                            </div>
-                          ))}
+                            ))}
+                            {quadrantData.speed.length === 0 && (
+                              <div className="text-xs text-gray-500 italic">無選擇項目</div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* 高CP值方案 - 高投資/低難度 */}
+                      <Card className="bg-blue-50 border-blue-200">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm text-blue-800">高CP值方案</CardTitle>
+                          <CardDescription className="text-xs">高投資/低難度</CardDescription>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <div className="space-y-2">
+                            {quadrantData.value.map((action) => (
+                              <div key={action.id} className="text-xs p-2 bg-white rounded border">
+                                <div className="font-medium">{action.title}</div>
+                                <div className="text-gray-600">
+                                  {action.co2Saved}噸 | NT${action.cost.toLocaleString()}
+                                </div>
+                              </div>
+                            ))}
+                            {quadrantData.value.length === 0 && (
+                              <div className="text-xs text-gray-500 italic">無選擇項目</div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* 策略投資 - 低投資/高難度 */}
+                      <Card className="bg-yellow-50 border-yellow-200">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm text-yellow-800">策略投資</CardTitle>
+                          <CardDescription className="text-xs">低投資/高難度</CardDescription>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <div className="space-y-2">
+                            {quadrantData.strategy.map((action) => (
+                              <div key={action.id} className="text-xs p-2 bg-white rounded border">
+                                <div className="font-medium">{action.title}</div>
+                                <div className="text-gray-600">
+                                  {action.co2Saved}噸 | NT${action.cost.toLocaleString()}
+                                </div>
+                              </div>
+                            ))}
+                            {quadrantData.strategy.length === 0 && (
+                              <div className="text-xs text-gray-500 italic">無選擇項目</div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* 重大專案 - 高投資/高難度 */}
+                      <Card className="bg-red-50 border-red-200">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm text-red-800">重大專案</CardTitle>
+                          <CardDescription className="text-xs">高投資/高難度</CardDescription>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <div className="space-y-2">
+                            {quadrantData.major.map((action) => (
+                              <div key={action.id} className="text-xs p-2 bg-white rounded border">
+                                <div className="font-medium">{action.title}</div>
+                                <div className="text-gray-600">
+                                  {action.co2Saved}噸 | NT${action.cost.toLocaleString()}
+                                </div>
+                              </div>
+                            ))}
+                            {quadrantData.major.length === 0 && (
+                              <div className="text-xs text-gray-500 italic">無選擇項目</div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Matrix Labels */}
+                    <div className="mt-4 text-center">
+                      <div className="flex justify-between items-center">
+                        <div className="text-sm text-gray-600">低投資</div>
+                        <div className="text-sm font-medium text-gray-800">投資級距</div>
+                        <div className="text-sm text-gray-600">高投資</div>
+                      </div>
+                      <div className="flex justify-center mt-2">
+                        <div className="flex flex-col items-center">
+                          <div className="text-sm text-gray-600 mb-1">簡單</div>
+                          <div className="text-sm font-medium text-gray-800 transform -rotate-90">執行難度</div>
+                          <div className="text-sm text-gray-600 mt-1">複雜</div>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            )}
+          </div>
         )}
 
         {/* Action Categories */}
