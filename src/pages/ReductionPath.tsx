@@ -5,87 +5,158 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { 
   TrendingDown, 
-  Lightbulb, 
-  Zap, 
-  Recycle, 
-  Leaf, 
+  Calculator, 
+  Target, 
+  FileText, 
   ArrowLeft,
   CheckCircle,
-  Clock,
-  Target
+  Download,
+  Settings,
+  BarChart3,
+  LineChart as LineChartIcon,
+  Globe
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const ReductionPath = () => {
-  const [selectedPath, setSelectedPath] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    scope1: "",
+    scope2: "",
+    baseYear: "2023",
+    targetYear: "2050",
+    reductionModel: "",
+    companyName: "",
+    industry: ""
+  });
+  
+  const [pathData, setPathData] = useState<any[]>([]);
+  const [isCalculated, setIsCalculated] = useState(false);
 
-  const pathways = [
-    {
-      id: "energy-efficiency",
-      title: "能源效率提升",
-      description: "透過設備升級和能源管理系統提升能源使用效率",
-      icon: Zap,
-      color: "bg-yellow-500",
-      reduction: "30-50%",
-      timeframe: "1-2 年",
-      investment: "中等",
-      steps: [
-        { title: "能源審計", description: "全面評估現有能源使用情況", status: "completed" },
-        { title: "設備升級", description: "更換高效能設備和LED照明", status: "in-progress" },
-        { title: "智慧監控", description: "安裝能源管理系統", status: "pending" },
-        { title: "持續優化", description: "定期檢討和改善", status: "pending" }
-      ]
+  const reductionModels = [
+    { 
+      value: "sbti", 
+      label: "SBTi 科學基礎目標", 
+      description: "符合巴黎協定1.5°C目標",
+      annualReduction: 4.2 
     },
-    {
-      id: "renewable-energy",
-      title: "再生能源轉換",
-      description: "導入太陽能、風能等再生能源替代傳統化石燃料",
-      icon: Leaf,
-      color: "bg-green-500",
-      reduction: "50-80%",
-      timeframe: "2-3 年",
-      investment: "高",
-      steps: [
-        { title: "可行性評估", description: "評估再生能源導入潛力", status: "completed" },
-        { title: "方案設計", description: "設計最適再生能源方案", status: "completed" },
-        { title: "設備安裝", description: "安裝太陽能板或風力設備", status: "in-progress" },
-        { title: "系統整合", description: "與現有電力系統整合", status: "pending" }
-      ]
+    { 
+      value: "taiwan", 
+      label: "台灣2050淨零目標", 
+      description: "依循台灣國家淨零排放路徑",
+      annualReduction: 3.8 
     },
-    {
-      id: "circular-economy",
-      title: "循環經濟模式",
-      description: "建立廢棄物減量、回收再利用的循環經濟體系",
-      icon: Recycle,
-      color: "bg-blue-500",
-      reduction: "20-40%",
-      timeframe: "1-3 年",
-      investment: "低-中等",
-      steps: [
-        { title: "廢棄物盤點", description: "全面盤點廢棄物產生源", status: "completed" },
-        { title: "回收系統", description: "建立分類回收系統", status: "in-progress" },
-        { title: "供應鏈整合", description: "與供應商建立循環模式", status: "in-progress" },
-        { title: "創新應用", description: "開發廢棄物再利用技術", status: "pending" }
-      ]
+    { 
+      value: "aggressive", 
+      label: "積極減碳目標", 
+      description: "超越國際標準的積極減碳",
+      annualReduction: 5.0 
+    },
+    { 
+      value: "moderate", 
+      label: "穩健減碳目標", 
+      description: "平衡成本效益的穩健路徑",
+      annualReduction: 3.0 
     }
   ];
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "completed":
-        return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case "in-progress":
-        return <Clock className="w-4 h-4 text-yellow-500" />;
-      default:
-        return <Target className="w-4 h-4 text-gray-400" />;
+  const industries = [
+    { value: "manufacturing", label: "製造業" },
+    { value: "electronics", label: "電子業" },
+    { value: "chemical", label: "化工業" },
+    { value: "steel", label: "鋼鐵業" },
+    { value: "textile", label: "紡織業" },
+    { value: "food", label: "食品業" }
+  ];
+
+  const calculatePath = () => {
+    const scope1 = parseFloat(formData.scope1) || 0;
+    const scope2 = parseFloat(formData.scope2) || 0;
+    const totalEmissions = scope1 + scope2;
+    const baseYear = parseInt(formData.baseYear);
+    const targetYear = parseInt(formData.targetYear);
+    const yearSpan = targetYear - baseYear;
+    
+    const selectedModel = reductionModels.find(m => m.value === formData.reductionModel);
+    if (!selectedModel) return;
+    
+    const annualReduction = selectedModel.annualReduction / 100;
+    
+    const data = [];
+    for (let year = baseYear; year <= targetYear; year++) {
+      const yearsFromBase = year - baseYear;
+      const remainingEmissions = totalEmissions * Math.pow(1 - annualReduction, yearsFromBase);
+      const reductionFromBase = totalEmissions - remainingEmissions;
+      const reductionPercentage = (reductionFromBase / totalEmissions) * 100;
+      
+      data.push({
+        year,
+        totalEmissions: Math.max(0, remainingEmissions),
+        scope1: Math.max(0, scope1 * Math.pow(1 - annualReduction, yearsFromBase)),
+        scope2: Math.max(0, scope2 * Math.pow(1 - annualReduction, yearsFromBase)),
+        reductionPercentage: Math.min(100, reductionPercentage),
+        cumulativeReduction: reductionFromBase
+      });
     }
+    
+    setPathData(data);
+    setIsCalculated(true);
   };
 
-  const getProgressValue = (steps: any[]) => {
-    const completedSteps = steps.filter(step => step.status === "completed").length;
-    return (completedSteps / steps.length) * 100;
+  const exportReport = () => {
+    const selectedModel = reductionModels.find(m => m.value === formData.reductionModel);
+    const reportData = {
+      companyInfo: {
+        name: formData.companyName,
+        industry: formData.industry
+      },
+      emissionData: {
+        scope1: parseFloat(formData.scope1),
+        scope2: parseFloat(formData.scope2),
+        total: parseFloat(formData.scope1) + parseFloat(formData.scope2),
+        baseYear: formData.baseYear,
+        targetYear: formData.targetYear
+      },
+      reductionModel: selectedModel,
+      pathData: pathData,
+      summary: {
+        finalReduction: pathData[pathData.length - 1]?.reductionPercentage || 0,
+        totalCumulativeReduction: pathData[pathData.length - 1]?.cumulativeReduction || 0,
+        averageAnnualReduction: selectedModel?.annualReduction || 0
+      },
+      generatedDate: new Date().toLocaleDateString('zh-TW')
+    };
+
+    const dataStr = JSON.stringify(reportData, null, 2);
+    const dataBlob = new Blob([dataStr], {type: 'application/json'});
+    
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `減碳路徑規劃報告_${formData.companyName || '企業'}_${new Date().toISOString().slice(0,10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const chartConfig = {
+    totalEmissions: {
+      label: "總排放量",
+      color: "hsl(var(--chart-1))"
+    },
+    scope1: {
+      label: "範疇一",
+      color: "hsl(var(--chart-2))"
+    },
+    scope2: {
+      label: "範疇二", 
+      color: "hsl(var(--chart-3))"
+    }
   };
 
   return (
@@ -112,145 +183,349 @@ const ReductionPath = () => {
 
       <div className="px-6 py-8 mx-auto max-w-7xl">
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">選擇您的減碳策略</h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">科學化減碳路徑規劃</h2>
           <p className="text-lg text-gray-600">
-            根據您的企業特性選擇最適合的減碳路徑，制定系統性的減碳計畫
+            運用科學方法規劃清晰可行的淨零排放路徑，符合國際標準與台灣政策目標
           </p>
         </div>
 
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="overview">策略總覽</TabsTrigger>
-            <TabsTrigger value="detailed">詳細規劃</TabsTrigger>
+        <Tabs defaultValue="input" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="input">數據輸入</TabsTrigger>
+            <TabsTrigger value="model">減碳模型</TabsTrigger>
+            <TabsTrigger value="result">路徑結果</TabsTrigger>
+            <TabsTrigger value="report">完整報告</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid md:grid-cols-3 gap-6">
-              {pathways.map((pathway) => {
-                const IconComponent = pathway.icon;
-                return (
-                  <Card 
-                    key={pathway.id}
-                    className={`cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${
-                      selectedPath === pathway.id ? 'ring-2 ring-green-500' : ''
-                    }`}
-                    onClick={() => setSelectedPath(pathway.id)}
-                  >
-                    <CardHeader className="text-center">
-                      <div className={`w-16 h-16 ${pathway.color} rounded-full flex items-center justify-center mx-auto mb-4`}>
-                        <IconComponent className="w-8 h-8 text-white" />
+          {/* Data Input Tab */}
+          <TabsContent value="input" className="space-y-6">
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Calculator className="w-5 h-5" />
+                  <span>企業基本資料與排放數據</span>
+                </CardTitle>
+                <CardDescription>
+                  請輸入您企業的基本資訊和範疇一、二的排放量數據
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label>企業名稱</Label>
+                    <Input
+                      value={formData.companyName}
+                      onChange={(e) => setFormData({...formData, companyName: e.target.value})}
+                      placeholder="請輸入企業名稱"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>產業類別</Label>
+                    <Select value={formData.industry} onValueChange={(value) => setFormData({...formData, industry: value})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="選擇產業類別" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {industries.map((industry) => (
+                          <SelectItem key={industry.value} value={industry.value}>
+                            {industry.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label>範疇一排放量 (噸 CO2e/年)</Label>
+                    <Input
+                      type="number"
+                      value={formData.scope1}
+                      onChange={(e) => setFormData({...formData, scope1: e.target.value})}
+                      placeholder="直接排放量"
+                    />
+                    <p className="text-xs text-gray-500">
+                      包含燃料燃燒、製程排放、逸散排放等
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>範疇二排放量 (噸 CO2e/年)</Label>
+                    <Input
+                      type="number"
+                      value={formData.scope2}
+                      onChange={(e) => setFormData({...formData, scope2: e.target.value})}
+                      placeholder="間接排放量"
+                    />
+                    <p className="text-xs text-gray-500">
+                      主要為外購電力的間接排放
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label>基準年</Label>
+                    <Select value={formData.baseYear} onValueChange={(value) => setFormData({...formData, baseYear: value})}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({length: 10}, (_, i) => 2024 - i).map(year => (
+                          <SelectItem key={year} value={year.toString()}>
+                            {year}年
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>目標年</Label>
+                    <Select value={formData.targetYear} onValueChange={(value) => setFormData({...formData, targetYear: value})}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="2030">2030年</SelectItem>
+                        <SelectItem value="2040">2040年</SelectItem>
+                        <SelectItem value="2050">2050年</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {formData.scope1 && formData.scope2 && (
+                  <div className="p-4 bg-blue-50 rounded-lg">
+                    <h4 className="font-medium text-blue-900 mb-2">排放量摘要</h4>
+                    <div className="grid grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <div className="text-blue-600">範疇一</div>
+                        <div className="font-medium">{parseFloat(formData.scope1).toLocaleString()} 噸</div>
                       </div>
-                      <CardTitle className="text-xl">{pathway.title}</CardTitle>
-                      <CardDescription className="text-center">
-                        {pathway.description}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray-600">減碳潛力</span>
-                        <Badge variant="secondary" className="bg-green-100 text-green-800">
-                          {pathway.reduction}
-                        </Badge>
+                      <div>
+                        <div className="text-blue-600">範疇二</div>
+                        <div className="font-medium">{parseFloat(formData.scope2).toLocaleString()} 噸</div>
                       </div>
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray-600">實施時間</span>
-                        <span className="font-medium">{pathway.timeframe}</span>
+                      <div>
+                        <div className="text-blue-600">總排放量</div>
+                        <div className="font-medium">
+                          {(parseFloat(formData.scope1) + parseFloat(formData.scope2)).toLocaleString()} 噸
+                        </div>
                       </div>
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray-600">投資規模</span>
-                        <span className="font-medium">{pathway.investment}</span>
-                      </div>
-                      <Progress value={getProgressValue(pathway.steps)} className="mt-4" />
-                      <div className="text-xs text-gray-500 text-center">
-                        進度：{Math.round(getProgressValue(pathway.steps))}%
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
-          <TabsContent value="detailed" className="space-y-6">
-            {selectedPath ? (
-              <div className="space-y-6">
-                {pathways
-                  .filter(pathway => pathway.id === selectedPath)
-                  .map(pathway => (
-                    <Card key={pathway.id} className="shadow-lg">
-                      <CardHeader>
-                        <div className="flex items-center space-x-4">
-                          <div className={`w-12 h-12 ${pathway.color} rounded-full flex items-center justify-center`}>
-                            <pathway.icon className="w-6 h-6 text-white" />
-                          </div>
-                          <div>
-                            <CardTitle className="text-2xl">{pathway.title}</CardTitle>
-                            <CardDescription className="text-lg">
-                              {pathway.description}
-                            </CardDescription>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-6">
-                          <div className="grid md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
-                            <div className="text-center">
-                              <div className="text-2xl font-bold text-green-600">{pathway.reduction}</div>
-                              <div className="text-sm text-gray-600">減碳潛力</div>
-                            </div>
-                            <div className="text-center">
-                              <div className="text-2xl font-bold text-blue-600">{pathway.timeframe}</div>
-                              <div className="text-sm text-gray-600">實施時間</div>
-                            </div>
-                            <div className="text-center">
-                              <div className="text-2xl font-bold text-orange-600">{pathway.investment}</div>
-                              <div className="text-sm text-gray-600">投資規模</div>
-                            </div>
-                          </div>
-
-                          <div>
-                            <h3 className="text-lg font-semibold mb-4">實施步驟</h3>
-                            <div className="space-y-4">
-                              {pathway.steps.map((step, index) => (
-                                <div key={index} className="flex items-start space-x-4 p-4 bg-white rounded-lg border">
-                                  <div className="flex-shrink-0 mt-1">
-                                    {getStatusIcon(step.status)}
-                                  </div>
-                                  <div className="flex-1">
-                                    <h4 className="font-medium text-gray-900">{step.title}</h4>
-                                    <p className="text-sm text-gray-600 mt-1">{step.description}</p>
-                                  </div>
-                                  <div className="flex-shrink-0">
-                                    <Badge 
-                                      variant={step.status === "completed" ? "default" : "secondary"}
-                                      className={
-                                        step.status === "completed" 
-                                          ? "bg-green-100 text-green-800" 
-                                          : step.status === "in-progress"
-                                          ? "bg-yellow-100 text-yellow-800"
-                                          : "bg-gray-100 text-gray-800"
-                                      }
-                                    >
-                                      {step.status === "completed" ? "已完成" : 
-                                       step.status === "in-progress" ? "進行中" : "待執行"}
-                                    </Badge>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+          {/* Model Selection Tab */}
+          <TabsContent value="model" className="space-y-6">
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Target className="w-5 h-5" />
+                  <span>選擇減碳模型</span>
+                </CardTitle>
+                <CardDescription>
+                  依據國際標準或台灣目標選擇適合的減碳模型
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-2 gap-4">
+                  {reductionModels.map((model) => (
+                    <div
+                      key={model.value}
+                      className={`p-4 border rounded-lg cursor-pointer transition-all duration-200 ${
+                        formData.reductionModel === model.value
+                          ? 'border-green-500 bg-green-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                      onClick={() => setFormData({...formData, reductionModel: model.value})}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <h3 className="font-medium">{model.label}</h3>
+                        {formData.reductionModel === model.value && (
+                          <CheckCircle className="w-5 h-5 text-green-500" />
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600 mb-3">{model.description}</p>
+                      <div className="flex items-center justify-between">
+                        <Badge variant="secondary">
+                          年減排 {model.annualReduction}%
+                        </Badge>
+                        <span className="text-xs text-gray-500">
+                          {model.value === 'sbti' && <Globe className="w-4 h-4 inline mr-1" />}
+                          {model.value === 'taiwan' && '🇹🇼'}
+                        </span>
+                      </div>
+                    </div>
                   ))}
-              </div>
+                </div>
+
+                {formData.reductionModel && (
+                  <div className="mt-6">
+                    <Button 
+                      onClick={calculatePath}
+                      disabled={!formData.scope1 || !formData.scope2 || !formData.reductionModel}
+                      className="w-full"
+                      size="lg"
+                    >
+                      <Calculator className="w-4 h-4 mr-2" />
+                      生成減碳路徑
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Results Tab */}
+          <TabsContent value="result" className="space-y-6">
+            {isCalculated && pathData.length > 0 ? (
+              <>
+                <Card className="shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <LineChartIcon className="w-5 h-5" />
+                      <span>減碳路徑圖</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ChartContainer config={chartConfig} className="h-80">
+                      <LineChart data={pathData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="year" />
+                        <YAxis />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Line 
+                          type="monotone" 
+                          dataKey="totalEmissions" 
+                          stroke="var(--color-totalEmissions)" 
+                          strokeWidth={3}
+                          name="總排放量 (噸)"
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="scope1" 
+                          stroke="var(--color-scope1)" 
+                          strokeWidth={2}
+                          name="範疇一 (噸)"
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="scope2" 
+                          stroke="var(--color-scope2)" 
+                          strokeWidth={2}
+                          name="範疇二 (噸)"
+                        />
+                      </LineChart>
+                    </ChartContainer>
+                  </CardContent>
+                </Card>
+
+                <Card className="shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <BarChart3 className="w-5 h-5" />
+                      <span>減碳進度表</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3 max-h-64 overflow-y-auto">
+                      {pathData.map((data, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <div className="flex items-center space-x-4">
+                            <div className="font-medium w-16">{data.year}年</div>
+                            <div className="text-sm text-gray-600">
+                              排放量：{data.totalEmissions.toFixed(1)} 噸
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-3">
+                            <div className="text-sm font-medium text-green-600">
+                              減排 {data.reductionPercentage.toFixed(1)}%
+                            </div>
+                            <Progress value={data.reductionPercentage} className="w-20" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
             ) : (
               <Card className="shadow-lg">
                 <CardContent className="flex flex-col items-center justify-center py-12">
-                  <Lightbulb className="w-16 h-16 text-gray-400 mb-4" />
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">請選擇減碳策略</h3>
+                  <Calculator className="w-16 h-16 text-gray-400 mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">尚未生成路徑</h3>
                   <p className="text-gray-600 text-center">
-                    請先在策略總覽中選擇一個減碳路徑，然後回到這裡查看詳細的實施計畫
+                    請先完成數據輸入和模型選擇，然後點擊「生成減碳路徑」按鈕
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          {/* Report Tab */}
+          <TabsContent value="report" className="space-y-6">
+            {isCalculated && pathData.length > 0 ? (
+              <Card className="shadow-lg">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center space-x-2">
+                      <FileText className="w-5 h-5" />
+                      <span>完整減碳路徑報告</span>
+                    </CardTitle>
+                    <CardDescription>
+                      完整的路徑規劃報告，包含數據表與參數設定
+                    </CardDescription>
+                  </div>
+                  <Button onClick={exportReport} className="flex items-center space-x-2">
+                    <Download className="w-4 h-4" />
+                    <span>匯出報告</span>
+                  </Button>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid md:grid-cols-3 gap-6">
+                    <div className="text-center p-4 bg-blue-50 rounded-lg">
+                      <div className="text-2xl font-bold text-blue-600 mb-2">
+                        {pathData[pathData.length - 1]?.reductionPercentage.toFixed(1)}%
+                      </div>
+                      <div className="text-sm text-blue-800">最終減排比例</div>
+                    </div>
+                    <div className="text-center p-4 bg-green-50 rounded-lg">
+                      <div className="text-2xl font-bold text-green-600 mb-2">
+                        {pathData[pathData.length - 1]?.cumulativeReduction.toFixed(0)}
+                      </div>
+                      <div className="text-sm text-green-800">累積減排量 (噸)</div>
+                    </div>
+                    <div className="text-center p-4 bg-orange-50 rounded-lg">
+                      <div className="text-2xl font-bold text-orange-600 mb-2">
+                        {formData.targetYear}
+                      </div>
+                      <div className="text-sm text-orange-800">目標達成年</div>
+                    </div>
+                  </div>
+
+                  <div className="prose max-w-none">
+                    <h4 className="text-lg font-semibold mb-3">報告摘要</h4>
+                    <p className="text-gray-700">
+                      本報告基於 {formData.companyName || '貴企業'} 在 {formData.baseYear} 年的排放基準，
+                      採用 {reductionModels.find(m => m.value === formData.reductionModel)?.label} 模型，
+                      規劃至 {formData.targetYear} 年的減碳路徑。預計可達成 
+                      {pathData[pathData.length - 1]?.reductionPercentage.toFixed(1)}% 的減排目標，
+                      累積減少 {pathData[pathData.length - 1]?.cumulativeReduction.toFixed(0)} 噸 CO2 當量排放。
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="shadow-lg">
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <FileText className="w-16 h-16 text-gray-400 mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">報告尚未生成</h3>
+                  <p className="text-gray-600 text-center">
+                    請先完成減碳路徑計算，系統將自動生成完整報告
                   </p>
                 </CardContent>
               </Card>

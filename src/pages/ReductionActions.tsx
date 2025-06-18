@@ -12,115 +12,106 @@ import {
   CheckCircle2, 
   Plus, 
   ArrowLeft,
-  Lightbulb,
+  Factory,
+  Zap,
   Car,
-  Home,
-  Utensils,
-  Shirt,
-  Award,
+  Users,
+  Settings,
   Building2,
   DollarSign,
   Calendar,
   Filter,
   Download,
   BarChart3,
-  Grid3X3
+  Grid3X3,
+  Award
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const ReductionActions = () => {
   const [completedActions, setCompletedActions] = useState<string[]>([]);
   const [selectedIndustry, setSelectedIndustry] = useState<string>("");
-  const [budget, setBudget] = useState<string>("");
+  const [companySize, setCompanySize] = useState<string>("");
   const [showPlan, setShowPlan] = useState(false);
 
   const industries = [
     { value: "manufacturing", label: "製造業" },
-    { value: "retail", label: "零售業" },
-    { value: "service", label: "服務業" },
-    { value: "tech", label: "科技業" },
-    { value: "hospitality", label: "餐旅業" },
-    { value: "logistics", label: "物流業" },
-    { value: "construction", label: "建築業" },
-    { value: "agriculture", label: "農業" }
+    { value: "electronics", label: "電子業" },
+    { value: "chemical", label: "化工業" },
+    { value: "textile", label: "紡織業" },
+    { value: "food", label: "食品業" },
+    { value: "automotive", label: "汽車業" },
+    { value: "steel", label: "鋼鐵業" },
+    { value: "petrochemical", label: "石化業" }
   ];
 
-  const budgetRanges = [
-    { value: "0-50000", label: "5萬以下" },
-    { value: "50000-200000", label: "5-20萬" },
-    { value: "200000-500000", label: "20-50萬" },
-    { value: "500000-1000000", label: "50-100萬" },
-    { value: "1000000+", label: "100萬以上" }
+  const companySizes = [
+    { value: "small", label: "小型企業 (50人以下)" },
+    { value: "medium", label: "中型企業 (50-250人)" },
+    { value: "large", label: "大型企業 (250人以上)" }
   ];
 
   const actionCategories = [
     {
-      id: "energy",
-      title: "節能減碳",
-      icon: Lightbulb,
-      color: "bg-yellow-500",
-      industries: ["manufacturing", "retail", "service", "tech"],
-      budgetMin: 0,
+      id: "manufacturing",
+      title: "製程優化",
+      icon: Factory,
+      color: "bg-blue-600",
+      industries: ["manufacturing", "electronics", "chemical", "textile", "food"],
       actions: [
-        { id: "led", title: "更換LED燈具", impact: "高", difficulty: "簡單", co2Saved: 0.5, cost: 30000 },
-        { id: "thermostat", title: "調整空調溫度設定", impact: "中", difficulty: "簡單", co2Saved: 0.3, cost: 5000 },
-        { id: "unplug", title: "拔除待機電器插頭", impact: "低", difficulty: "簡單", co2Saved: 0.1, cost: 0 },
-        { id: "efficient-appliances", title: "選購節能家電", impact: "高", difficulty: "中等", co2Saved: 0.8, cost: 150000 }
+        { id: "process-efficiency", title: "製程效率改善", impact: "高", difficulty: "中等", co2Saved: 2.5, cost: 200000, description: "優化生產流程，減少能源浪費" },
+        { id: "waste-heat-recovery", title: "廢熱回收系統", impact: "高", difficulty: "困難", co2Saved: 3.2, cost: 800000, description: "回收製程中的廢熱進行再利用" },
+        { id: "equipment-upgrade", title: "老舊設備汰換", impact: "中", difficulty: "中等", co2Saved: 1.8, cost: 500000, description: "更換高效能生產設備" },
+        { id: "automation", title: "智慧化自動控制", impact: "中", difficulty: "困難", co2Saved: 1.5, cost: 600000, description: "導入AI智慧控制系統" }
+      ]
+    },
+    {
+      id: "facility",
+      title: "設施節能",
+      icon: Zap,
+      color: "bg-yellow-500",
+      industries: ["manufacturing", "electronics", "chemical", "automotive"],
+      actions: [
+        { id: "led-lighting", title: "LED照明系統", impact: "中", difficulty: "簡單", co2Saved: 0.8, cost: 150000, description: "全面更換LED節能照明" },
+        { id: "hvac-optimization", title: "空調系統優化", impact: "高", difficulty: "中等", co2Saved: 2.0, cost: 300000, description: "升級高效率空調系統" },
+        { id: "solar-panels", title: "太陽能發電系統", impact: "高", difficulty: "困難", co2Saved: 4.5, cost: 1200000, description: "安裝屋頂太陽能板" },
+        { id: "energy-monitoring", title: "能源監控系統", impact: "中", difficulty: "中等", co2Saved: 1.2, cost: 250000, description = "即時監控各區域用電狀況" }
       ]
     },
     {
       id: "transport",
-      title: "綠色交通",
+      title: "運輸物流",
       icon: Car,
-      color: "bg-blue-500", 
-      industries: ["logistics", "service", "retail"],
-      budgetMin: 10000,
+      color: "bg-green-600",
+      industries: ["manufacturing", "food", "automotive", "textile"],
       actions: [
-        { id: "public-transport", title: "使用大眾運輸工具", impact: "高", difficulty: "簡單", co2Saved: 1.2, cost: 10000 },
-        { id: "bike", title: "騎自行車或步行", impact: "高", difficulty: "簡單", co2Saved: 1.5, cost: 5000 },
-        { id: "carpool", title: "共乘或拼車", impact: "中", difficulty: "中等", co2Saved: 0.6, cost: 0 },
-        { id: "electric-vehicle", title: "使用電動車", impact: "高", difficulty: "困難", co2Saved: 2.0, cost: 800000 }
+        { id: "fleet-electrification", title: "車隊電動化", impact: "高", difficulty: "困難", co2Saved: 3.8, cost: 2000000, description: "將公司車隊更換為電動車" },
+        { id: "route-optimization", title: "運輸路線優化", impact: "中", difficulty: "簡單", co2Saved: 1.0, cost: 50000, description: "使用AI優化配送路線" },
+        { id: "logistics-consolidation", title: "物流整合", impact: "中", difficulty: "中等", co2Saved: 1.5, cost: 100000, description: "整合供應鏈減少運輸次數" },
+        { id: "remote-work", title: "遠距工作政策", impact: "中", difficulty: "簡單", co2Saved: 0.8, cost: 20000, description: "減少員工通勤排放" }
       ]
     },
     {
-      id: "lifestyle",
-      title: "生活方式",
-      icon: Home,
-      color: "bg-green-500",
-      industries: ["service", "hospitality", "retail"],
-      budgetMin: 0,
+      id: "hr-management",
+      title: "人力資源",
+      icon: Users,
+      color: "bg-purple-600",
+      industries: ["manufacturing", "electronics", "chemical", "automotive"],
       actions: [
-        { id: "recycle", title: "垃圾分類回收", impact: "中", difficulty: "簡單", co2Saved: 0.2, cost: 2000 },
-        { id: "reduce-plastic", title: "減少塑膠製品使用", impact: "中", difficulty: "簡單", co2Saved: 0.3, cost: 1000 },
-        { id: "local-products", title: "選購在地產品", impact: "中", difficulty: "中等", co2Saved: 0.4, cost: 5000 },
-        { id: "minimal-packaging", title: "選擇簡約包裝", impact: "低", difficulty: "簡單", co2Saved: 0.1, cost: 0 }
-      ]
-    },
-    {
-      id: "consumption",
-      title: "消費習慣",
-      icon: Shirt,
-      color: "bg-purple-500",
-      industries: ["retail", "service", "hospitality"],
-      budgetMin: 0,
-      actions: [
-        { id: "buy-less", title: "減少不必要消費", impact: "高", difficulty: "中等", co2Saved: 1.0, cost: 0 },
-        { id: "second-hand", title: "購買二手商品", impact: "中", difficulty: "簡單", co2Saved: 0.5, cost: 0 },
-        { id: "repair", title: "修理而非丟棄", impact: "中", difficulty: "中等", co2Saved: 0.4, cost: 3000 },
-        { id: "sharing", title: "共享經濟參與", impact: "中", difficulty: "簡單", co2Saved: 0.3, cost: 1000 }
+        { id: "green-training", title: "綠色技能培訓", impact: "中", difficulty: "簡單", co2Saved: 0.5, cost: 80000, description: "員工環保意識與技能培訓" },
+        { id: "incentive-program", title: "綠色行為獎勵", impact: "低", difficulty: "簡單", co2Saved: 0.3, cost: 30000, description: "鼓勵員工節能減碳行為" },
+        { id: "carpooling", title: "員工共乘計畫", impact: "中", difficulty: "簡單", co2Saved: 0.6, cost: 15000, description: "推動員工共乘減少通勤排放" },
+        { id: "green-procurement", title: "綠色採購政策", impact: "中", difficulty: "中等", co2Saved: 1.2, cost: 50000, description: "優先採購環保產品和服務" }
       ]
     }
   ];
 
   const getFilteredCategories = () => {
-    if (!selectedIndustry && !budget) return actionCategories;
-    
-    const budgetValue = budget ? parseInt(budget.split('-')[0]) : 0;
+    if (!selectedIndustry && !companySize) return actionCategories;
     
     return actionCategories.filter(category => {
       const industryMatch = !selectedIndustry || category.industries.includes(selectedIndustry);
-      const budgetMatch = !budget || budgetValue >= category.budgetMin;
-      return industryMatch && budgetMatch;
+      return industryMatch;
     });
   };
 
@@ -176,9 +167,37 @@ const ReductionActions = () => {
     }
   };
 
+  const exportPlan = () => {
+    const selectedActions = getSelectedActions();
+    
+    const planData = {
+      companyInfo: {
+        industry: selectedIndustry,
+        size: companySize
+      },
+      summary: {
+        totalActions: selectedActions.length,
+        totalCO2Saved: getTotalCO2Saved(),
+        totalCost: getTotalCost()
+      },
+      actions: selectedActions,
+      exportDate: new Date().toLocaleDateString('zh-TW')
+    };
+
+    const dataStr = JSON.stringify(planData, null, 2);
+    const dataBlob = new Blob([dataStr], {type: 'application/json'});
+    
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `企業減碳行動計畫_${new Date().toISOString().slice(0,10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const getSelectedActions = () => {
     const selected = [];
-    filteredCategories.forEach(category => {
+    getFilteredCategories().forEach(category => {
       category.actions.forEach(action => {
         if (completedActions.includes(action.id)) {
           selected.push({
@@ -192,67 +211,10 @@ const ReductionActions = () => {
     return selected;
   };
 
-  const getMatrixQuadrant = (cost: number, difficulty: string) => {
-    const isHighCost = cost > 50000;
-    const isHighDifficulty = difficulty === "困難" || difficulty === "中等";
-    
-    if (!isHighCost && !isHighDifficulty) return "speed"; // 速效方案
-    if (isHighCost && !isHighDifficulty) return "value"; // 高CP值方案
-    if (!isHighCost && isHighDifficulty) return "strategy"; // 策略投資
-    return "major"; // 重大專案
-  };
-
-  const getQuadrantData = () => {
-    const selectedActions = getSelectedActions();
-    const quadrants = {
-      speed: [],
-      value: [],
-      strategy: [],
-      major: []
-    };
-
-    selectedActions.forEach(action => {
-      const quadrant = getMatrixQuadrant(action.cost, action.difficulty);
-      quadrants[quadrant].push(action);
-    });
-
-    return quadrants;
-  };
-
-  const exportPlan = () => {
-    const selectedActions = getSelectedActions();
-    const quadrants = getQuadrantData();
-    
-    const planData = {
-      summary: {
-        totalActions: selectedActions.length,
-        totalCO2Saved: getTotalCO2Saved(),
-        totalCost: getTotalCost(),
-        industry: selectedIndustry,
-        budget: budget
-      },
-      actions: selectedActions,
-      matrix: quadrants,
-      exportDate: new Date().toLocaleDateString('zh-TW')
-    };
-
-    const dataStr = JSON.stringify(planData, null, 2);
-    const dataBlob = new Blob([dataStr], {type: 'application/json'});
-    
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `減碳行動計畫_${new Date().toISOString().slice(0,10)}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
-
   const filteredCategories = getFilteredCategories();
-  const selectedActions = getSelectedActions();
-  const quadrantData = getQuadrantData();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
       {/* Header */}
       <div className="bg-white shadow-sm">
         <div className="px-6 py-4 mx-auto max-w-7xl">
@@ -265,8 +227,8 @@ const ReductionActions = () => {
                 </Button>
               </Link>
               <div className="flex items-center space-x-2">
-                <Target className="w-6 h-6 text-green-600" />
-                <h1 className="text-2xl font-bold text-gray-900">減碳行動清單</h1>
+                <Target className="w-6 h-6 text-blue-600" />
+                <h1 className="text-2xl font-bold text-gray-900">企業減碳行動</h1>
               </div>
             </div>
           </div>
@@ -274,24 +236,21 @@ const ReductionActions = () => {
       </div>
 
       <div className="px-6 py-8 mx-auto max-w-7xl">
-        {/* Industry and Budget Selection */}
+        {/* Company Profile Selection */}
         <Card className="shadow-lg mb-8">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
-              <Filter className="w-5 h-5" />
-              <span>選擇產業與預算</span>
+              <Building2 className="w-5 h-5" />
+              <span>企業資訊設定</span>
             </CardTitle>
             <CardDescription>
-              選擇您的產業類型和預算範圍，系統將為您推薦最適合的減碳行動
+              請選擇您的產業類型和企業規模，系統將為您推薦最適合的減碳行動方案
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label className="flex items-center space-x-2">
-                  <Building2 className="w-4 h-4" />
-                  <span>產業類型</span>
-                </Label>
+                <Label>產業類型</Label>
                 <Select value={selectedIndustry} onValueChange={setSelectedIndustry}>
                   <SelectTrigger>
                     <SelectValue placeholder="選擇您的產業" />
@@ -306,18 +265,15 @@ const ReductionActions = () => {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label className="flex items-center space-x-2">
-                  <DollarSign className="w-4 h-4" />
-                  <span>預算範圍 (新台幣)</span>
-                </Label>
-                <Select value={budget} onValueChange={setBudget}>
+                <Label>企業規模</Label>
+                <Select value={companySize} onValueChange={setCompanySize}>
                   <SelectTrigger>
-                    <SelectValue placeholder="選擇您的預算範圍" />
+                    <SelectValue placeholder="選擇企業規模" />
                   </SelectTrigger>
                   <SelectContent>
-                    {budgetRanges.map((range) => (
-                      <SelectItem key={range.value} value={range.value}>
-                        {range.label}
+                    {companySizes.map((size) => (
+                      <SelectItem key={size.value} value={size.value}>
+                        {size.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -329,32 +285,32 @@ const ReductionActions = () => {
 
         {/* Progress Overview */}
         <div className="mb-8">
-          <Card className="shadow-lg bg-gradient-to-r from-green-600 to-emerald-600 text-white">
+          <Card className="shadow-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Award className="w-6 h-6" />
-                <span>您的減碳成果</span>
+                <span>減碳執行成果</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid md:grid-cols-4 gap-4">
                 <div className="text-center">
                   <div className="text-2xl font-bold mb-1">{completedActions.length}</div>
-                  <div className="text-sm opacity-90">已完成行動</div>
+                  <div className="text-sm opacity-90">已執行項目</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold mb-1">{getTotalCO2Saved().toFixed(1)} 噸</div>
-                  <div className="text-sm opacity-90">預估年減碳量</div>
+                  <div className="text-sm opacity-90">年減碳量</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold mb-1">NT$ {getTotalCost().toLocaleString()}</div>
-                  <div className="text-sm opacity-90">總投資成本</div>
+                  <div className="text-sm opacity-90">總投資金額</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold mb-1">
                     {getTotalActions() > 0 ? Math.round((completedActions.length / getTotalActions()) * 100) : 0}%
                   </div>
-                  <div className="text-sm opacity-90">完成度</div>
+                  <div className="text-sm opacity-90">執行進度</div>
                 </div>
               </div>
               <Progress 
@@ -367,219 +323,80 @@ const ReductionActions = () => {
 
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">探索減碳行動</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">企業減碳行動方案</h2>
             <p className="text-gray-600">
-              {selectedIndustry || budget ? 
-                `根據您的條件篩選出 ${filteredCategories.length} 個行動類別` : 
-                "選擇適合您的減碳行動，每一個小步驟都能累積成大改變"
+              {selectedIndustry || companySize ? 
+                `根據您的企業特性篩選出 ${filteredCategories.length} 個行動類別` : 
+                "選擇適合您企業的減碳行動，建立系統性的減碳策略"
               }
             </p>
           </div>
-          <Button 
-            onClick={() => setShowPlan(!showPlan)}
-            className="flex items-center space-x-2"
-            variant={showPlan ? "default" : "outline"}
-          >
-            <Calendar className="w-4 h-4" />
-            <span>專屬行動計畫</span>
-          </Button>
-        </div>
-
-        {/* Enhanced Action Plan View */}
-        {showPlan && (
-          <div className="space-y-8 mb-8">
-            {completedActions.length === 0 ? (
-              <Card className="shadow-lg">
-                <CardContent className="text-center py-12">
-                  <Target className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">尚未選擇任何行動項目</h3>
-                  <p className="text-gray-600">請先選擇下方的減碳行動來建立您的專屬計畫</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <>
-                {/* Action Summary */}
-                <Card className="shadow-lg">
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <div>
-                      <CardTitle className="flex items-center space-x-2">
-                        <BarChart3 className="w-5 h-5" />
-                        <span>行動摘要</span>
-                      </CardTitle>
-                      <CardDescription>您的減碳行動計畫總覽</CardDescription>
-                    </div>
-                    <Button onClick={exportPlan} className="flex items-center space-x-2">
-                      <Download className="w-4 h-4" />
-                      <span>匯出計畫</span>
-                    </Button>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid md:grid-cols-3 gap-6">
-                      <div className="text-center p-4 bg-blue-50 rounded-lg">
-                        <div className="text-2xl font-bold text-blue-600 mb-2">{selectedActions.length}</div>
-                        <div className="text-sm text-blue-800">選擇行動數</div>
-                      </div>
-                      <div className="text-center p-4 bg-green-50 rounded-lg">
-                        <div className="text-2xl font-bold text-green-600 mb-2">{getTotalCO2Saved().toFixed(1)} 噸</div>
-                        <div className="text-sm text-green-800">年減碳量</div>
-                      </div>
-                      <div className="text-center p-4 bg-orange-50 rounded-lg">
-                        <div className="text-2xl font-bold text-orange-600 mb-2">NT$ {getTotalCost().toLocaleString()}</div>
-                        <div className="text-sm text-orange-800">總投資金額</div>
-                      </div>
-                    </div>
-
-                    <div className="mt-6">
-                      <h4 className="font-semibold mb-3">行動效益分析</h4>
-                      <div className="space-y-3">
-                        {selectedActions.map((action) => (
-                          <div key={action.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                            <div className="flex items-center space-x-3">
-                              <CheckCircle2 className="w-5 h-5 text-green-500" />
-                              <div>
-                                <div className="font-medium">{action.title}</div>
-                                <div className="text-sm text-gray-600">{action.category}</div>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <div className="text-sm font-medium text-green-600">
-                                {action.co2Saved} 噸 CO2/年
-                              </div>
-                              <div className="text-sm text-gray-600">
-                                NT$ {action.cost.toLocaleString()}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* 2x2 Matrix Analysis */}
-                <Card className="shadow-lg">
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <Grid3X3 className="w-5 h-5" />
-                      <span>2x2矩陣分析：投資級距 vs. 執行難度</span>
-                    </CardTitle>
-                    <CardDescription>策略性分析您的減碳行動組合</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 gap-4 h-96">
-                      {/* 速效方案 - 低投資/低難度 */}
-                      <Card className="bg-green-50 border-green-200">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-sm text-green-800">速效方案</CardTitle>
-                          <CardDescription className="text-xs">低投資/低難度</CardDescription>
-                        </CardHeader>
-                        <CardContent className="pt-0">
-                          <div className="space-y-2">
-                            {quadrantData.speed.map((action) => (
-                              <div key={action.id} className="text-xs p-2 bg-white rounded border">
-                                <div className="font-medium">{action.title}</div>
-                                <div className="text-gray-600">
-                                  {action.co2Saved}噸 | NT${action.cost.toLocaleString()}
-                                </div>
-                              </div>
-                            ))}
-                            {quadrantData.speed.length === 0 && (
-                              <div className="text-xs text-gray-500 italic">無選擇項目</div>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      {/* 高CP值方案 - 高投資/低難度 */}
-                      <Card className="bg-blue-50 border-blue-200">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-sm text-blue-800">高CP值方案</CardTitle>
-                          <CardDescription className="text-xs">高投資/低難度</CardDescription>
-                        </CardHeader>
-                        <CardContent className="pt-0">
-                          <div className="space-y-2">
-                            {quadrantData.value.map((action) => (
-                              <div key={action.id} className="text-xs p-2 bg-white rounded border">
-                                <div className="font-medium">{action.title}</div>
-                                <div className="text-gray-600">
-                                  {action.co2Saved}噸 | NT${action.cost.toLocaleString()}
-                                </div>
-                              </div>
-                            ))}
-                            {quadrantData.value.length === 0 && (
-                              <div className="text-xs text-gray-500 italic">無選擇項目</div>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      {/* 策略投資 - 低投資/高難度 */}
-                      <Card className="bg-yellow-50 border-yellow-200">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-sm text-yellow-800">策略投資</CardTitle>
-                          <CardDescription className="text-xs">低投資/高難度</CardDescription>
-                        </CardHeader>
-                        <CardContent className="pt-0">
-                          <div className="space-y-2">
-                            {quadrantData.strategy.map((action) => (
-                              <div key={action.id} className="text-xs p-2 bg-white rounded border">
-                                <div className="font-medium">{action.title}</div>
-                                <div className="text-gray-600">
-                                  {action.co2Saved}噸 | NT${action.cost.toLocaleString()}
-                                </div>
-                              </div>
-                            ))}
-                            {quadrantData.strategy.length === 0 && (
-                              <div className="text-xs text-gray-500 italic">無選擇項目</div>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      {/* 重大專案 - 高投資/高難度 */}
-                      <Card className="bg-red-50 border-red-200">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-sm text-red-800">重大專案</CardTitle>
-                          <CardDescription className="text-xs">高投資/高難度</CardDescription>
-                        </CardHeader>
-                        <CardContent className="pt-0">
-                          <div className="space-y-2">
-                            {quadrantData.major.map((action) => (
-                              <div key={action.id} className="text-xs p-2 bg-white rounded border">
-                                <div className="font-medium">{action.title}</div>
-                                <div className="text-gray-600">
-                                  {action.co2Saved}噸 | NT${action.cost.toLocaleString()}
-                                </div>
-                              </div>
-                            ))}
-                            {quadrantData.major.length === 0 && (
-                              <div className="text-xs text-gray-500 italic">無選擇項目</div>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-
-                    {/* Matrix Labels */}
-                    <div className="mt-4 text-center">
-                      <div className="flex justify-between items-center">
-                        <div className="text-sm text-gray-600">低投資</div>
-                        <div className="text-sm font-medium text-gray-800">投資級距</div>
-                        <div className="text-sm text-gray-600">高投資</div>
-                      </div>
-                      <div className="flex justify-center mt-2">
-                        <div className="flex flex-col items-center">
-                          <div className="text-sm text-gray-600 mb-1">簡單</div>
-                          <div className="text-sm font-medium text-gray-800 transform -rotate-90">執行難度</div>
-                          <div className="text-sm text-gray-600 mt-1">複雜</div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </>
+          <div className="flex space-x-3">
+            <Button 
+              onClick={() => setShowPlan(!showPlan)}
+              className="flex items-center space-x-2"
+              variant={showPlan ? "default" : "outline"}
+            >
+              <Calendar className="w-4 h-4" />
+              <span>執行計畫</span>
+            </Button>
+            {completedActions.length > 0 && (
+              <Button onClick={exportPlan} className="flex items-center space-x-2">
+                <Download className="w-4 h-4" />
+                <span>匯出報告</span>
+              </Button>
             )}
           </div>
+        </div>
+
+        {/* Execution Plan View */}
+        {showPlan && completedActions.length > 0 && (
+          <Card className="shadow-lg mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <BarChart3 className="w-5 h-5" />
+                <span>執行計畫摘要</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-3 gap-6 mb-6">
+                <div className="text-center p-4 bg-blue-50 rounded-lg">
+                  <div className="text-2xl font-bold text-blue-600 mb-2">{getSelectedActions().length}</div>
+                  <div className="text-sm text-blue-800">選定方案數</div>
+                </div>
+                <div className="text-center p-4 bg-green-50 rounded-lg">
+                  <div className="text-2xl font-bold text-green-600 mb-2">{getTotalCO2Saved().toFixed(1)} 噸</div>
+                  <div className="text-sm text-green-800">年減碳效益</div>
+                </div>
+                <div className="text-center p-4 bg-orange-50 rounded-lg">
+                  <div className="text-2xl font-bold text-orange-600 mb-2">NT$ {getTotalCost().toLocaleString()}</div>
+                  <div className="text-sm text-orange-800">預估投資額</div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {getSelectedActions().map((action) => (
+                  <div key={action.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <CheckCircle2 className="w-5 h-5 text-green-500" />
+                      <div>
+                        <div className="font-medium">{action.title}</div>
+                        <div className="text-sm text-gray-600">{action.description}</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-medium text-green-600">
+                        減碳 {action.co2Saved} 噸/年
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        投資 NT$ {action.cost.toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Action Categories */}
@@ -601,7 +418,7 @@ const ReductionActions = () => {
                       <div>
                         <CardTitle className="text-xl">{category.title}</CardTitle>
                         <CardDescription>
-                          {categoryCompleted} / {category.actions.length} 已完成
+                          {categoryCompleted} / {category.actions.length} 項目已選定
                         </CardDescription>
                       </div>
                     </div>
@@ -620,7 +437,7 @@ const ReductionActions = () => {
                           key={action.id}
                           className={`p-4 border rounded-lg cursor-pointer transition-all duration-200 ${
                             isCompleted 
-                              ? 'bg-green-50 border-green-200' 
+                              ? 'bg-blue-50 border-blue-200' 
                               : 'bg-white border-gray-200 hover:border-gray-300'
                           }`}
                           onClick={() => toggleAction(action.id)}
@@ -633,11 +450,12 @@ const ReductionActions = () => {
                             />
                             <div className="flex-1">
                               <div className="flex items-center justify-between mb-2">
-                                <h3 className={`font-medium ${isCompleted ? 'line-through text-gray-500' : ''}`}>
+                                <h3 className={`font-medium ${isCompleted ? 'text-blue-700' : ''}`}>
                                   {action.title}
                                 </h3>
-                                {isCompleted && <CheckCircle2 className="w-5 h-5 text-green-500" />}
+                                {isCompleted && <CheckCircle2 className="w-5 h-5 text-blue-500" />}
                               </div>
+                              <p className="text-sm text-gray-600 mb-3">{action.description}</p>
                               <div className="flex items-center space-x-2 mb-2">
                                 <Badge variant="secondary" className={getImpactColor(action.impact)}>
                                   影響：{action.impact}
@@ -646,11 +464,9 @@ const ReductionActions = () => {
                                   難度：{action.difficulty}
                                 </Badge>
                               </div>
-                              <div className="text-sm text-gray-600">
-                                預估年減碳量：{action.co2Saved} 噸 CO2
-                              </div>
-                              <div className="text-sm text-gray-600">
-                                投資成本：NT$ {action.cost.toLocaleString()}
+                              <div className="text-sm text-gray-600 space-y-1">
+                                <div>減碳效益：{action.co2Saved} 噸 CO2/年</div>
+                                <div>投資金額：NT$ {action.cost.toLocaleString()}</div>
                               </div>
                             </div>
                           </div>
@@ -663,25 +479,6 @@ const ReductionActions = () => {
             );
           })}
         </div>
-
-        {/* Quick Add Section */}
-        <Card className="shadow-lg mt-8">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Plus className="w-5 h-5" />
-              <span>自訂行動</span>
-            </CardTitle>
-            <CardDescription>
-              添加您自己的減碳行動項目
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button variant="outline" className="w-full">
-              <Plus className="w-4 h-4 mr-2" />
-              新增自訂行動
-            </Button>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
