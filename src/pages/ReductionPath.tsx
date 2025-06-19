@@ -23,8 +23,6 @@ import {
   Globe,
   Upload,
   File,
-  DollarSign,
-  Book,
   Zap
 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -48,15 +46,6 @@ const ReductionPath = () => {
   const [pathData, setPathData] = useState<any[]>([]);
   const [isCalculated, setIsCalculated] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
-  
-  // 碳費試算相關狀態
-  const [carbonFeeData, setCarbonFeeData] = useState({
-    emissions: "50000",
-    industry: "",
-    reductionPlan: "none"
-  });
-  const [carbonFeeResults, setCarbonFeeResults] = useState<any[]>([]);
-  const [currentFeeRate, setCurrentFeeRate] = useState("default");
 
   const reductionModels = [
     { 
@@ -102,20 +91,6 @@ const ReductionPath = () => {
     { value: "re30", label: "RE30 (30% 再生能源)" },
     { value: "fit55", label: "Fit 55 (歐盟標準)" }
   ];
-
-  const reductionPlans = [
-    { value: "none", label: "無特定減量計畫", reduction: 0 },
-    { value: "sbti", label: "SBTi 1.5°C 路徑 (年減4.2%)", reduction: 4.2 },
-    { value: "taiwan", label: "台灣淨零路徑 (年減約2.8%)", reduction: 2.8 },
-    { value: "steel", label: "鋼鐵業指定削減路徑 (年減約5.7%)", reduction: 5.7 },
-    { value: "cement", label: "水泥業指定削減路徑 (年減約5.0%)", reduction: 5.0 }
-  ];
-
-  const feeRates = {
-    default: { rate: 300, label: "預設費率", description: "300元/噸" },
-    discount_a: { rate: 100, label: "優惠費率 A", description: "100元/噸" },
-    discount_b: { rate: 50, label: "優惠費率 B", description: "50元/噸" }
-  };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -216,28 +191,6 @@ const ReductionPath = () => {
     setIsCalculated(true);
   };
 
-  const calculateCarbonFee = () => {
-    const emissions = parseFloat(carbonFeeData.emissions) || 0;
-    const selectedPlan = reductionPlans.find(p => p.value === carbonFeeData.reductionPlan);
-    const annualReduction = selectedPlan ? selectedPlan.reduction / 100 : 0;
-    
-    const results = [];
-    for (let year = 2024; year <= 2050; year++) {
-      const yearsFromStart = year - 2024;
-      const remainingEmissions = emissions * Math.pow(1 - annualReduction, yearsFromStart);
-      
-      results.push({
-        year,
-        emissions: Math.max(0, remainingEmissions),
-        defaultFee: remainingEmissions * feeRates.default.rate,
-        discountA: remainingEmissions * feeRates.discount_a.rate,
-        discountB: remainingEmissions * feeRates.discount_b.rate
-      });
-    }
-    
-    setCarbonFeeResults(results);
-  };
-
   const exportToExcel = () => {
     const selectedModel = reductionModels.find(m => m.value === formData.reductionModel);
     
@@ -302,25 +255,6 @@ const ReductionPath = () => {
     }
   };
 
-  const carbonFeeChartConfig = {
-    emissions: {
-      label: "排放量",
-      color: "#2563eb"
-    },
-    defaultFee: {
-      label: "預設費率",
-      color: "#dc2626"
-    },
-    discountA: {
-      label: "優惠費率 A",
-      color: "#16a34a"
-    },
-    discountB: {
-      label: "優惠費率 B",
-      color: "#ea580c"
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50">
       {/* Header */}
@@ -352,14 +286,13 @@ const ReductionPath = () => {
         </div>
 
         <Tabs defaultValue="input" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="input">數據輸入</TabsTrigger>
             <TabsTrigger value="historical">歷史數據</TabsTrigger>
             <TabsTrigger value="upload">文件上傳</TabsTrigger>
             <TabsTrigger value="model">減碳模型</TabsTrigger>
             <TabsTrigger value="advanced">進階設定</TabsTrigger>
             <TabsTrigger value="result">路徑結果</TabsTrigger>
-            <TabsTrigger value="carbon-fee">碳費試算</TabsTrigger>
           </TabsList>
 
           {/* Data Input Tab */}
@@ -864,243 +797,6 @@ const ReductionPath = () => {
                 </CardContent>
               </Card>
             )}
-          </TabsContent>
-
-          {/* Carbon Fee Tab */}
-          <TabsContent value="carbon-fee" className="space-y-6">
-            {/* 碳費制度簡介 */}
-            <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Book className="w-5 h-5" />
-                  <span>碳費制度簡介與法規說明</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-gray-700">
-                  台灣碳費制度依據《氣候變遷因應法》設立，旨在透過經濟誘因鼓勵企業減碳，並促進國家達成2050淨零轉型目標。
-                </p>
-                
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="space-y-3">
-                    <h4 className="font-semibold text-gray-900">徵收對象</h4>
-                    <p className="text-sm text-gray-600">
-                      初期主要針對年排放量超過 25,000 噸 CO₂e 的電力業及大型製造業。
-                    </p>
-                    
-                    <h4 className="font-semibold text-gray-900">基本費率</h4>
-                    <p className="text-sm text-gray-600">
-                      預設費率為每噸 300 元新台幣，未來將視國內外情況滾動式調整。
-                    </p>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <h4 className="font-semibold text-gray-900">優惠機制</h4>
-                    <p className="text-sm text-gray-600">
-                      若企業能有效執行自主減量計畫或符合特定條件，可適用優惠費率以茲鼓勵。
-                    </p>
-                    
-                    <h4 className="font-semibold text-gray-900">碳洩漏風險</h4>
-                    <p className="text-sm text-gray-600">
-                      為保護國內產業競爭力，對具備高碳洩漏風險的事業設有不同的收費係數，避免產業外移。
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* 碳費試算 */}
-            <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <DollarSign className="w-5 h-5" />
-                  <span>碳費試算與三種情境比較</span>
-                </CardTitle>
-                <CardDescription>
-                  輸入年排放量、產業別與減量情境，以預測未來費用
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid md:grid-cols-3 gap-6">
-                  <div className="space-y-2">
-                    <Label>年排放量 (噸 CO₂e)</Label>
-                    <Input
-                      type="number"
-                      value={carbonFeeData.emissions}
-                      onChange={(e) => setCarbonFeeData({...carbonFeeData, emissions: e.target.value})}
-                      placeholder="50000"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>產業類別</Label>
-                    <Select value={carbonFeeData.industry} onValueChange={(value) => setCarbonFeeData({...carbonFeeData, industry: value})}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="請選擇您的產業別..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {industries.map((industry) => (
-                          <SelectItem key={industry.value} value={industry.value}>
-                            {industry.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>減量情境選擇</Label>
-                    <Select value={carbonFeeData.reductionPlan} onValueChange={(value) => setCarbonFeeData({...carbonFeeData, reductionPlan: value})}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="選擇減量情境" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {reductionPlans.map((plan) => (
-                          <SelectItem key={plan.value} value={plan.value}>
-                            {plan.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <Button onClick={calculateCarbonFee} className="w-full" size="lg">
-                  <Calculator className="w-4 h-4 mr-2" />
-                  計算碳費
-                </Button>
-
-                {carbonFeeResults.length > 0 && (
-                  <div className="space-y-6">
-                    <div className="text-center">
-                      <h4 className="text-lg font-semibold mb-2">減量路徑比較圖 (至2050年)</h4>
-                      <p className="text-sm text-gray-600">
-                        比較不同減量情境下的排放趨勢。您目前的選擇是：
-                        {reductionPlans.find(p => p.value === carbonFeeData.reductionPlan)?.label}
-                      </p>
-                    </div>
-
-                    <ChartContainer config={carbonFeeChartConfig} className="h-64">
-                      <LineChart data={carbonFeeResults.slice(0, 10)}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="year" />
-                        <YAxis />
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <Line 
-                          type="monotone" 
-                          dataKey="emissions" 
-                          stroke="#2563eb" 
-                          strokeWidth={3}
-                          name="排放量 (噸)"
-                        />
-                      </LineChart>
-                    </ChartContainer>
-
-                    <div className="space-y-4">
-                      <h4 className="text-lg font-semibold">碳費試算與三種情境比較</h4>
-                      <p className="text-sm text-gray-600">
-                        點擊下方按鈕切換不同費率情境，或啟用高碳洩漏風險模式，查看對應的碳費成本。
-                      </p>
-
-                      <div className="grid md:grid-cols-3 gap-4">
-                        {Object.entries(feeRates).map(([key, rate]) => (
-                          <div
-                            key={key}
-                            className={`p-4 border rounded-lg cursor-pointer transition-all duration-200 ${
-                              currentFeeRate === key
-                                ? 'border-blue-500 bg-blue-50'
-                                : 'border-gray-200 hover:border-gray-300'
-                            }`}
-                            onClick={() => setCurrentFeeRate(key)}
-                          >
-                            <div className="text-center">
-                              <h5 className="font-medium mb-2">{rate.label}</h5>
-                              <div className="text-lg font-bold text-blue-600 mb-2">
-                                ({rate.description})
-                              </div>
-                              {key !== 'default' && (
-                                <div className="text-xs text-gray-600">
-                                  {key === 'discount_a' && (
-                                    <div>
-                                      <p>🎯 適用條件：</p>
-                                      <p>提出並通過「自主減量計畫」</p>
-                                      <p>達到「行業別指定削減率」</p>
-                                    </div>
-                                  )}
-                                  {key === 'discount_b' && (
-                                    <div>
-                                      <p>🎯 適用條件：</p>
-                                      <p>通過「自主減量計畫」</p>
-                                      <p>達到「技術標竿削減率」</p>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      {currentFeeRate !== 'default' && (
-                        <div className="mt-4 p-4 bg-green-50 rounded-lg">
-                          <h5 className="font-medium text-green-900 mb-2">
-                            {feeRates[currentFeeRate as keyof typeof feeRates].label} 詳細說明
-                          </h5>
-                          {currentFeeRate === 'discount_a' && (
-                            <div className="text-sm text-green-800 space-y-2">
-                              <p><strong>📊 行業別指定削減率舉例：</strong></p>
-                              <ul className="list-disc ml-5">
-                                <li>鋼鐵業: 25.2%</li>
-                                <li>水泥業: 22.3%</li>
-                                <li>其他行業: 42.0%</li>
-                              </ul>
-                              <p><strong>📌 核心精神：</strong></p>
-                              <p>您需證明「有效執行減碳行動」且結果達標，才能適用此優惠費率。</p>
-                            </div>
-                          )}
-                          {currentFeeRate === 'discount_b' && (
-                            <div className="text-sm text-green-800 space-y-2">
-                              <p><strong>🔧 所謂「技術標竿」常見包括：</strong></p>
-                              <ul className="list-disc ml-5">
-                                <li>引進高效率製程設備</li>
-                                <li>能源使用效率顯著優於同業</li>
-                                <li>使用再生能源或低碳燃料</li>
-                                <li>實施碳捕捉技術 (CCUS)</li>
-                              </ul>
-                              <p><strong>📌 核心精神：</strong></p>
-                              <p>此費率鼓勵具備實質技術投資的企業，並需符合環境部公告之標準。</p>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      <div className="overflow-x-auto">
-                        <table className="w-full border-collapse border border-gray-300">
-                          <thead>
-                            <tr className="bg-gray-50">
-                              <th className="border border-gray-300 p-2 text-left">年份</th>
-                              <th className="border border-gray-300 p-2 text-left">排放量(噸)</th>
-                              <th className="border border-gray-300 p-2 text-left">預設費率</th>
-                              <th className="border border-gray-300 p-2 text-left">優惠費率 A</th>
-                              <th className="border border-gray-300 p-2 text-left">優惠費率 B</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {carbonFeeResults.slice(0, 10).map((result, index) => (
-                              <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                                <td className="border border-gray-300 p-2">{result.year}</td>
-                                <td className="border border-gray-300 p-2">{result.emissions.toLocaleString()}</td>
-                                <td className="border border-gray-300 p-2">NT$ {result.defaultFee.toLocaleString()}</td>
-                                <td className="border border-gray-300 p-2">NT$ {result.discountA.toLocaleString()}</td>
-                                <td className="border border-gray-300 p-2">NT$ {result.discountB.toLocaleString()}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
           </TabsContent>
         </Tabs>
 
