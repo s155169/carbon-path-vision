@@ -108,30 +108,6 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Stats Section */}
-      <div className="bg-white/50 backdrop-blur-sm py-16">
-        <div className="px-6 mx-auto max-w-7xl">
-          <div className="grid md:grid-cols-4 gap-8 text-center">
-            <div className="animate-fade-in">
-              <div className="text-3xl font-bold text-emerald-600 mb-2">50+</div>
-              <div className="text-gray-600">減碳策略</div>
-            </div>
-            <div className="animate-fade-in" style={{ animationDelay: "0.1s" }}>
-              <div className="text-3xl font-bold text-emerald-600 mb-2">1000+</div>
-              <div className="text-gray-600">用戶信賴</div>
-            </div>
-            <div className="animate-fade-in" style={{ animationDelay: "0.2s" }}>
-              <div className="text-3xl font-bold text-emerald-600 mb-2">30%</div>
-              <div className="text-gray-600">平均減碳效果</div>
-            </div>
-            <div className="animate-fade-in" style={{ animationDelay: "0.3s" }}>
-              <div className="text-3xl font-bold text-emerald-600 mb-2">24/7</div>
-              <div className="text-gray-600">專業支持</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-12">
         <div className="px-6 mx-auto max-w-7xl">

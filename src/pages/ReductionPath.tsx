@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,9 +20,12 @@ import {
   Settings,
   BarChart3,
   LineChart as LineChartIcon,
-  Globe
+  Globe,
+  Upload,
+  File
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import * as XLSX from 'xlsx';
 
 const ReductionPath = () => {
   const [formData, setFormData] = useState({
@@ -38,6 +40,7 @@ const ReductionPath = () => {
   
   const [pathData, setPathData] = useState<any[]>([]);
   const [isCalculated, setIsCalculated] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
 
   const reductionModels = [
     { 
@@ -75,6 +78,22 @@ const ReductionPath = () => {
     { value: "food", label: "食品業" }
   ];
 
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files) {
+      const newFiles = Array.from(files).filter(file => 
+        file.type === 'application/pdf' || 
+        file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+        file.type === 'application/vnd.ms-excel'
+      );
+      setUploadedFiles(prev => [...prev, ...newFiles]);
+    }
+  };
+
+  const removeFile = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   const calculatePath = () => {
     const scope1 = parseFloat(formData.scope1) || 0;
     const scope2 = parseFloat(formData.scope2) || 0;
@@ -109,39 +128,49 @@ const ReductionPath = () => {
     setIsCalculated(true);
   };
 
-  const exportReport = () => {
+  const exportToExcel = () => {
     const selectedModel = reductionModels.find(m => m.value === formData.reductionModel);
-    const reportData = {
-      companyInfo: {
-        name: formData.companyName,
-        industry: formData.industry
-      },
-      emissionData: {
-        scope1: parseFloat(formData.scope1),
-        scope2: parseFloat(formData.scope2),
-        total: parseFloat(formData.scope1) + parseFloat(formData.scope2),
-        baseYear: formData.baseYear,
-        targetYear: formData.targetYear
-      },
-      reductionModel: selectedModel,
-      pathData: pathData,
-      summary: {
-        finalReduction: pathData[pathData.length - 1]?.reductionPercentage || 0,
-        totalCumulativeReduction: pathData[pathData.length - 1]?.cumulativeReduction || 0,
-        averageAnnualReduction: selectedModel?.annualReduction || 0
-      },
-      generatedDate: new Date().toLocaleDateString('zh-TW')
-    };
-
-    const dataStr = JSON.stringify(reportData, null, 2);
-    const dataBlob = new Blob([dataStr], {type: 'application/json'});
     
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `減碳路徑規劃報告_${formData.companyName || '企業'}_${new Date().toISOString().slice(0,10)}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
+    // 建立工作簿
+    const workbook = XLSX.utils.book_new();
+    
+    // 企業資訊工作表
+    const companyInfo = [
+      ['企業名稱', formData.companyName],
+      ['產業類別', industries.find(i => i.value === formData.industry)?.label || ''],
+      ['基準年', formData.baseYear],
+      ['目標年', formData.targetYear],
+      ['減碳模型', selectedModel?.label || ''],
+      ['', ''],
+      ['範疇一排放量 (噸)', parseFloat(formData.scope1)],
+      ['範疇二排放量 (噸)', parseFloat(formData.scope2)],
+      ['總排放量 (噸)', parseFloat(formData.scope1) + parseFloat(formData.scope2)],
+      ['', ''],
+      ['最終減排比例 (%)', pathData[pathData.length - 1]?.reductionPercentage.toFixed(1)],
+      ['累積減排量 (噸)', pathData[pathData.length - 1]?.cumulativeReduction.toFixed(0)],
+      ['年均減排率 (%)', selectedModel?.annualReduction],
+    ];
+    
+    const companyWS = XLSX.utils.aoa_to_sheet(companyInfo);
+    XLSX.utils.book_append_sheet(workbook, companyWS, '企業資訊');
+    
+    // 減碳路徑資料工作表
+    const pathHeaders = ['年份', '總排放量(噸)', '範疇一(噸)', '範疇二(噸)', '減排比例(%)', '累積減排量(噸)'];
+    const pathRows = pathData.map(data => [
+      data.year,
+      data.totalEmissions.toFixed(1),
+      data.scope1.toFixed(1),
+      data.scope2.toFixed(1),
+      data.reductionPercentage.toFixed(1),
+      data.cumulativeReduction.toFixed(1)
+    ]);
+    
+    const pathWS = XLSX.utils.aoa_to_sheet([pathHeaders, ...pathRows]);
+    XLSX.utils.book_append_sheet(workbook, pathWS, '減碳路徑');
+    
+    // 匯出檔案
+    const fileName = `減碳路徑規劃報告_${formData.companyName || '企業'}_${new Date().toISOString().slice(0,10)}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
   };
 
   const chartConfig = {
@@ -190,8 +219,9 @@ const ReductionPath = () => {
         </div>
 
         <Tabs defaultValue="input" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="input">數據輸入</TabsTrigger>
+            <TabsTrigger value="upload">文件上傳</TabsTrigger>
             <TabsTrigger value="model">減碳模型</TabsTrigger>
             <TabsTrigger value="result">路徑結果</TabsTrigger>
             <TabsTrigger value="report">完整報告</TabsTrigger>
@@ -313,6 +343,69 @@ const ReductionPath = () => {
                         </div>
                       </div>
                     </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* File Upload Tab */}
+          <TabsContent value="upload" className="space-y-6">
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Upload className="w-5 h-5" />
+                  <span>文件上傳</span>
+                </CardTitle>
+                <CardDescription>
+                  上傳相關文件如電費單、能源報告等（支援PDF、Excel格式）
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                  <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <div className="space-y-2">
+                    <Label htmlFor="file-upload" className="cursor-pointer text-blue-600 hover:text-blue-500">
+                      點擊選擇文件或拖拽文件至此處
+                    </Label>
+                    <Input
+                      id="file-upload"
+                      type="file"
+                      multiple
+                      accept=".pdf,.xlsx,.xls"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                    <p className="text-sm text-gray-500">
+                      支援PDF、Excel檔案，單檔不超過10MB
+                    </p>
+                  </div>
+                </div>
+
+                {uploadedFiles.length > 0 && (
+                  <div className="space-y-3">
+                    <h4 className="font-medium">已上傳的文件</h4>
+                    {uploadedFiles.map((file, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <File className="w-5 h-5 text-blue-500" />
+                          <div>
+                            <div className="font-medium text-sm">{file.name}</div>
+                            <div className="text-xs text-gray-500">
+                              {(file.size / 1024 / 1024).toFixed(2)} MB
+                            </div>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeFile(index)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          移除
+                        </Button>
+                      </div>
+                    ))}
                   </div>
                 )}
               </CardContent>
@@ -477,12 +570,12 @@ const ReductionPath = () => {
                       <span>完整減碳路徑報告</span>
                     </CardTitle>
                     <CardDescription>
-                      完整的路徑規劃報告，包含數據表與參數設定
+                      完整的路徑規劃報告，可匯出為Excel格式
                     </CardDescription>
                   </div>
-                  <Button onClick={exportReport} className="flex items-center space-x-2">
+                  <Button onClick={exportToExcel} className="flex items-center space-x-2">
                     <Download className="w-4 h-4" />
-                    <span>匯出報告</span>
+                    <span>匯出Excel報告</span>
                   </Button>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -514,7 +607,7 @@ const ReductionPath = () => {
                       採用 {reductionModels.find(m => m.value === formData.reductionModel)?.label} 模型，
                       規劃至 {formData.targetYear} 年的減碳路徑。預計可達成 
                       {pathData[pathData.length - 1]?.reductionPercentage.toFixed(1)}% 的減排目標，
-                      累積減少 {pathData[pathData.length - 1]?.cumulativeReduction.toFixed(0)} 噸 CO2 當量排放。
+                      累積減少 {pathData[pathData.length - 1]?.cumulativeReduction.toFixed(0)} 噸 CO2 �當量排放。
                     </p>
                   </div>
                 </CardContent>
