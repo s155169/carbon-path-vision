@@ -1,8 +1,11 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calculator, TrendingDown, Target, Leaf, ArrowRight } from "lucide-react";
+import { Calculator, TrendingDown, Target, Leaf, ArrowRight, BarChart3, Globe, Users } from "lucide-react";
 import { Link } from "react-router-dom";
+import Navigation from "@/components/Navigation";
+import StatsCard from "@/components/StatsCard";
+import CarbonChart from "@/components/CarbonChart";
 
 const Index = () => {
   const features = [
@@ -32,8 +35,27 @@ const Index = () => {
     }
   ];
 
+  // 示例數據
+  const emissionData = [
+    { name: "電力", value: 2.5 },
+    { name: "汽油", value: 1.8 },
+    { name: "天然氣", value: 0.7 },
+    { name: "其他", value: 0.4 },
+  ];
+
+  const monthlyTrend = [
+    { name: "1月", value: 3.2 },
+    { name: "2月", value: 2.8 },
+    { name: "3月", value: 3.5 },
+    { name: "4月", value: 2.9 },
+    { name: "5月", value: 2.6 },
+    { name: "6月", value: 2.4 },
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-100">
+      <Navigation />
+      
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-green-600 opacity-90"></div>
@@ -49,14 +71,61 @@ const Index = () => {
               透過科學化的碳費模擬、系統性的減碳路徑規劃，以及實用的減碳行動方案，
               幫助您實現淨零碳排目標
             </p>
-            <Button 
-              size="lg" 
-              className="bg-white text-emerald-600 hover:bg-emerald-50 font-semibold px-8 py-3 rounded-full transition-all duration-300 hover:scale-105"
-            >
-              開始探索
-              <ArrowRight className="ml-2 w-5 h-5" />
-            </Button>
+            <Link to="/carbon-fee">
+              <Button 
+                size="lg" 
+                className="bg-white text-emerald-600 hover:bg-emerald-50 font-semibold px-8 py-3 rounded-full transition-all duration-300 hover:scale-105"
+              >
+                開始模擬碳費
+                <ArrowRight className="ml-2 w-5 h-5" />
+              </Button>
+            </Link>
           </div>
+        </div>
+      </div>
+
+      {/* Stats Section */}
+      <div className="px-6 py-12 mx-auto max-w-7xl">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <StatsCard
+            title="全球平均碳排放"
+            value="4.8 公噸"
+            description="每人每年 CO2 當量"
+            icon={Globe}
+            color="blue"
+          />
+          <StatsCard
+            title="台灣碳費預計"
+            value="$300"
+            description="每公噸 CO2 (2024)"
+            icon={BarChart3}
+            trend={{ value: 12, isPositive: true }}
+            color="emerald"
+          />
+          <StatsCard
+            title="使用者"
+            value="1,234+"
+            description="正在追蹤碳足跡"
+            icon={Users}
+            trend={{ value: 8, isPositive: true }}
+            color="green"
+          />
+        </div>
+
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+          <CarbonChart
+            data={emissionData}
+            title="碳排放來源分析"
+            description="不同能源類型的碳排放比例"
+            type="pie"
+          />
+          <CarbonChart
+            data={monthlyTrend}
+            title="月度碳排放趨勢"
+            description="過去6個月的碳排放變化"
+            type="area"
+          />
         </div>
       </div>
 
