@@ -1,13 +1,18 @@
+
 import { useState, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Upload, FileText, FileSpreadsheet, X } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import * as XLSX from 'xlsx';
 import * as pdfjsLib from 'pdfjs-dist';
 
-// 設定PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// 設定PDF.js worker - 使用本地worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.js',
+  import.meta.url
+).toString();
 
 interface UtilityData {
   electricity: number;
@@ -24,6 +29,7 @@ const FileUpload = ({ onDataExtracted }: FileUploadProps) => {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -35,14 +41,26 @@ const FileUpload = ({ onDataExtracted }: FileUploadProps) => {
     try {
       if (file.type.includes('excel') || file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
         await processExcelFile(file);
+        toast({
+          title: "Excel文件處理成功",
+          description: "已成功提取用量數據",
+        });
       } else if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
         await processPDFFile(file);
+        toast({
+          title: "PDF文件處理成功",
+          description: "已成功提取用量數據",
+        });
       } else {
         throw new Error('不支援的檔案格式');
       }
     } catch (error) {
       console.error('檔案處理錯誤:', error);
-      alert('檔案處理失敗，請確認檔案格式正確');
+      toast({
+        title: "檔案處理失敗",
+        description: error instanceof Error ? error.message : "請確認檔案格式正確或檢查網路連線",
+        variant: "destructive",
+      });
     } finally {
       setIsProcessing(false);
     }
@@ -55,7 +73,6 @@ const FileUpload = ({ onDataExtracted }: FileUploadProps) => {
     const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
     // 嘗試從Excel中提取用電量、汽油使用量和天然氣使用量
-    // 這裡假設Excel文件有特定的格式
     let electricity = 0;
     let gasoline = 0;
     let naturalGas = 0;
@@ -63,7 +80,7 @@ const FileUpload = ({ onDataExtracted }: FileUploadProps) => {
 
     console.log('Excel數據:', jsonData);
 
-    // 簡單的數據提取邏輯 - 可以根據實際表格格式調整
+    // 數據提取邏輯
     jsonData.forEach((row: any) => {
       Object.keys(row).forEach(key => {
         const value = parseFloat(row[key]);
@@ -90,7 +107,14 @@ const FileUpload = ({ onDataExtracted }: FileUploadProps) => {
       const arrayBuffer = await file.arrayBuffer();
       
       // 載入PDF文檔
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const loadingTask = pdfjsLib.getDocument({ 
+        data: arrayBuffer,
+        useWorkerFetch: false,
+        isEvalSupported: false,
+        useSystemFonts: true
+      });
+      
+      const pdf = await loadingTask.promise;
       console.log('PDF頁數:', pdf.numPages);
       
       let fullText = '';
@@ -116,7 +140,10 @@ const FileUpload = ({ onDataExtracted }: FileUploadProps) => {
       onDataExtracted(extractedData);
     } catch (error) {
       console.error('PDF解析錯誤:', error);
-      throw new Error('PDF文件解析失敗');
+      if (error instanceof Error && error.message.includes('worker')) {
+        throw new Error('PDF解析服務暫時無法使用，請稍後再試或使用Excel格式');
+      }
+      throw new Error('PDF文件解析失敗，請確認文件未損壞');
     }
   };
 
@@ -128,16 +155,13 @@ const FileUpload = ({ onDataExtracted }: FileUploadProps) => {
     let naturalGas = 0;
     let month = new Date().getMonth() + 1 + '月';
     
-    // 將文字轉換為小寫以便匹配
-    const lowerText = text.toLowerCase();
-    
     // 月份提取
     const monthMatches = text.match(/(\d{1,2})月|(\d{4})年(\d{1,2})月/);
     if (monthMatches) {
       month = monthMatches[1] ? monthMatches[1] + '月' : monthMatches[3] + '月';
     }
     
-    // 電力使用量提取 - 尋找度數相關關鍵字
+    // 電力使用量提取
     const electricityPatterns = [
       /用電量[：:]\s*(\d+(?:\.\d+)?)/,
       /本期用電[：:]\s*(\d+(?:\.\d+)?)/,
@@ -152,7 +176,7 @@ const FileUpload = ({ onDataExtracted }: FileUploadProps) => {
       const match = text.match(pattern);
       if (match) {
         const value = parseFloat(match[1]);
-        if (value > electricity && value < 10000) { // 合理範圍檢查
+        if (value > electricity && value < 10000) {
           electricity = value;
           console.log('找到電力使用量:', value);
         }
@@ -174,7 +198,7 @@ const FileUpload = ({ onDataExtracted }: FileUploadProps) => {
       const match = text.match(pattern);
       if (match) {
         const value = parseFloat(match[1]);
-        if (value > gasoline && value < 1000) { // 合理範圍檢查
+        if (value > gasoline && value < 1000) {
           gasoline = value;
           console.log('找到汽油使用量:', value);
         }
@@ -197,7 +221,7 @@ const FileUpload = ({ onDataExtracted }: FileUploadProps) => {
       const match = text.match(pattern);
       if (match) {
         const value = parseFloat(match[1]);
-        if (value > naturalGas && value < 1000) { // 合理範圍檢查
+        if (value > naturalGas && value < 1000) {
           naturalGas = value;
           console.log('找到天然氣使用量:', value);
         }
@@ -208,12 +232,9 @@ const FileUpload = ({ onDataExtracted }: FileUploadProps) => {
     if (electricity === 0 && gasoline === 0 && naturalGas === 0) {
       console.log('使用寬鬆匹配模式...');
       
-      // 尋找所有數字並嘗試分類
       const numbers = text.match(/\d+(?:\.\d+)?/g);
       if (numbers) {
         const numValues = numbers.map(n => parseFloat(n)).filter(n => n > 0 && n < 10000);
-        
-        // 簡單的啟發式分類：通常電力用量較大，汽油中等，天然氣較小
         numValues.sort((a, b) => b - a);
         
         if (numValues.length >= 1) electricity = numValues[0];
