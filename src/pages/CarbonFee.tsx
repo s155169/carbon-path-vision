@@ -9,12 +9,15 @@ import { Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import StatsCard from "@/components/StatsCard";
 import CarbonChart from "@/components/CarbonChart";
+import FileUpload from "@/components/FileUpload";
+import ExcelReportGenerator from "@/components/ExcelReportGenerator";
 
 const CarbonFee = () => {
   const [electricity, setElectricity] = useState<number>(0);
   const [gasoline, setGasoline] = useState<number>(0);
   const [naturalGas, setNaturalGas] = useState<number>(0);
   const [carbonFeeRate] = useState<number>(300); // 每公噸 CO2 的費用（新台幣）
+  const [uploadedFileName, setUploadedFileName] = useState<string>("");
 
   // 碳排放係數
   const emissionFactors = {
@@ -37,6 +40,15 @@ const CarbonFee = () => {
     };
   };
 
+  // 處理文件上傳的數據
+  const handleFileDataExtracted = (data: any) => {
+    setElectricity(data.electricity);
+    setGasoline(data.gasoline);
+    setNaturalGas(data.naturalGas);
+    setUploadedFileName(data.month + "水電費單");
+    console.log('從文件提取的數據:', data);
+  };
+
   const emissions = calculateEmissions();
   const totalCarbonFee = emissions.total * carbonFeeRate;
 
@@ -56,6 +68,14 @@ const CarbonFee = () => {
     { name: "6月", value: totalCarbonFee * 0.95 },
   ];
 
+  // 報告數據
+  const reportData = {
+    carbonEmissions: emissions,
+    carbonFee: totalCarbonFee,
+    uploadedFileName,
+    calculationDate: new Date(),
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-100">
       <Navigation />
@@ -68,7 +88,12 @@ const CarbonFee = () => {
             返回首頁
           </Link>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">碳費模擬計算器</h1>
-          <p className="text-gray-600">輸入您的能源使用量，計算對應的碳排放量和碳費</p>
+          <p className="text-gray-600">上傳水電費單或手動輸入能源使用量，計算對應的碳排放量和碳費</p>
+        </div>
+
+        {/* 文件上傳區域 */}
+        <div className="mb-8">
+          <FileUpload onDataExtracted={handleFileDataExtracted} />
         </div>
 
         {/* Stats Cards */}
@@ -211,6 +236,11 @@ const CarbonFee = () => {
                 description="基於當前使用量的未來6個月碳費預測"
                 type="line"
               />
+            )}
+
+            {/* Excel報告生成 */}
+            {emissions.total > 0 && (
+              <ExcelReportGenerator data={reportData} />
             )}
           </div>
         </div>

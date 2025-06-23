@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -251,8 +250,8 @@ const ReductionPath = () => {
                     </div>
                     <p className="text-sm text-gray-600 mb-3">{category.description}</p>
                     <div className="flex justify-between text-xs">
-                      <span>影響力: <Badge variant="outline" size="sm">{category.impact}</Badge></span>
-                      <span>難度: <Badge variant="outline" size="sm">{category.difficulty}</Badge></span>
+                      <span>影響力: <Badge variant="outline">{category.impact}</Badge></span>
+                      <span>難度: <Badge variant="outline">{category.difficulty}</Badge></span>
                     </div>
                   </div>
                 );
