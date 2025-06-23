@@ -1,10 +1,13 @@
-
 import { useState, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Upload, FileText, FileSpreadsheet, X } from "lucide-react";
 import * as XLSX from 'xlsx';
+import * as pdfjsLib from 'pdfjs-dist';
+
+// 設定PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 interface UtilityData {
   electricity: number;
@@ -80,22 +83,151 @@ const FileUpload = ({ onDataExtracted }: FileUploadProps) => {
   };
 
   const processPDFFile = async (file: File) => {
-    // 簡化的PDF處理 - 實際應用中需要使用PDF.js或其他PDF解析庫
-    // 這裡我們模擬從PDF中提取數據
-    
-    // 模擬PDF解析延遲
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // 模擬提取的數據 - 實際應用中需要實現真正的PDF文字識別
-    const mockData = {
-      electricity: 350,
-      gasoline: 45,
-      naturalGas: 25,
-      month: new Date().getMonth() + 1 + '月'
-    };
+    try {
+      console.log('開始解析PDF文件:', file.name);
+      
+      // 將文件轉換為ArrayBuffer
+      const arrayBuffer = await file.arrayBuffer();
+      
+      // 載入PDF文檔
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      console.log('PDF頁數:', pdf.numPages);
+      
+      let fullText = '';
+      
+      // 提取所有頁面的文字
+      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        const page = await pdf.getPage(pageNum);
+        const textContent = await page.getTextContent();
+        
+        const pageText = textContent.items
+          .map((item: any) => item.str)
+          .join(' ');
+        
+        fullText += pageText + '\n';
+        console.log(`第${pageNum}頁文字:`, pageText);
+      }
+      
+      console.log('完整PDF文字內容:', fullText);
+      
+      // 解析提取的文字內容
+      const extractedData = parseUtilityBillText(fullText);
+      
+      onDataExtracted(extractedData);
+    } catch (error) {
+      console.error('PDF解析錯誤:', error);
+      throw new Error('PDF文件解析失敗');
+    }
+  };
 
-    console.log('PDF數據提取完成 (模擬):', mockData);
-    onDataExtracted(mockData);
+  const parseUtilityBillText = (text: string): UtilityData => {
+    console.log('開始解析文字內容...');
+    
+    let electricity = 0;
+    let gasoline = 0;
+    let naturalGas = 0;
+    let month = new Date().getMonth() + 1 + '月';
+    
+    // 將文字轉換為小寫以便匹配
+    const lowerText = text.toLowerCase();
+    
+    // 月份提取
+    const monthMatches = text.match(/(\d{1,2})月|(\d{4})年(\d{1,2})月/);
+    if (monthMatches) {
+      month = monthMatches[1] ? monthMatches[1] + '月' : monthMatches[3] + '月';
+    }
+    
+    // 電力使用量提取 - 尋找度數相關關鍵字
+    const electricityPatterns = [
+      /用電量[：:]\s*(\d+(?:\.\d+)?)/,
+      /本期用電[：:]\s*(\d+(?:\.\d+)?)/,
+      /電力消費[：:]\s*(\d+(?:\.\d+)?)/,
+      /(\d+(?:\.\d+)?)\s*度/,
+      /(\d+(?:\.\d+)?)\s*kwh/i,
+      /電費.*?(\d+(?:\.\d+)?)/,
+      /用電.*?(\d+(?:\.\d+)?)/
+    ];
+    
+    for (const pattern of electricityPatterns) {
+      const match = text.match(pattern);
+      if (match) {
+        const value = parseFloat(match[1]);
+        if (value > electricity && value < 10000) { // 合理範圍檢查
+          electricity = value;
+          console.log('找到電力使用量:', value);
+        }
+      }
+    }
+    
+    // 汽油使用量提取
+    const gasolinePatterns = [
+      /汽油[：:]\s*(\d+(?:\.\d+)?)/,
+      /油料[：:]\s*(\d+(?:\.\d+)?)/,
+      /加油[：:]\s*(\d+(?:\.\d+)?)/,
+      /(\d+(?:\.\d+)?)\s*公升/,
+      /(\d+(?:\.\d+)?)\s*升/,
+      /(\d+(?:\.\d+)?)\s*l\b/i,
+      /gasoline.*?(\d+(?:\.\d+)?)/i
+    ];
+    
+    for (const pattern of gasolinePatterns) {
+      const match = text.match(pattern);
+      if (match) {
+        const value = parseFloat(match[1]);
+        if (value > gasoline && value < 1000) { // 合理範圍檢查
+          gasoline = value;
+          console.log('找到汽油使用量:', value);
+        }
+      }
+    }
+    
+    // 天然氣使用量提取
+    const naturalGasPatterns = [
+      /天然氣[：:]\s*(\d+(?:\.\d+)?)/,
+      /瓦斯[：:]\s*(\d+(?:\.\d+)?)/,
+      /氣體[：:]\s*(\d+(?:\.\d+)?)/,
+      /(\d+(?:\.\d+)?)\s*立方公尺/,
+      /(\d+(?:\.\d+)?)\s*m³/,
+      /(\d+(?:\.\d+)?)\s*m3/,
+      /gas.*?(\d+(?:\.\d+)?)/i,
+      /natural gas.*?(\d+(?:\.\d+)?)/i
+    ];
+    
+    for (const pattern of naturalGasPatterns) {
+      const match = text.match(pattern);
+      if (match) {
+        const value = parseFloat(match[1]);
+        if (value > naturalGas && value < 1000) { // 合理範圍檢查
+          naturalGas = value;
+          console.log('找到天然氣使用量:', value);
+        }
+      }
+    }
+    
+    // 如果沒有找到數據，嘗試更寬鬆的數字匹配
+    if (electricity === 0 && gasoline === 0 && naturalGas === 0) {
+      console.log('使用寬鬆匹配模式...');
+      
+      // 尋找所有數字並嘗試分類
+      const numbers = text.match(/\d+(?:\.\d+)?/g);
+      if (numbers) {
+        const numValues = numbers.map(n => parseFloat(n)).filter(n => n > 0 && n < 10000);
+        
+        // 簡單的啟發式分類：通常電力用量較大，汽油中等，天然氣較小
+        numValues.sort((a, b) => b - a);
+        
+        if (numValues.length >= 1) electricity = numValues[0];
+        if (numValues.length >= 2) gasoline = numValues[1];
+        if (numValues.length >= 3) naturalGas = numValues[2];
+        
+        console.log('啟發式分類結果:', { electricity, gasoline, naturalGas });
+      }
+    }
+    
+    const result = { electricity, gasoline, naturalGas, month };
+    console.log('最終解析結果:', result);
+    
+    return result;
   };
 
   const removeFile = () => {
