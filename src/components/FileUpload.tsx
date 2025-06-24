@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,6 +6,7 @@ import { Upload, FileText, FileSpreadsheet, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import * as XLSX from 'xlsx';
 import * as pdfjsLib from 'pdfjs-dist';
+import { getAllEmissionFactors, findEmissionFactor } from "@/data/emissionFactors";
 
 // 設定PDF.js worker - 使用本地worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
@@ -18,6 +18,13 @@ interface UtilityData {
   electricity: number;
   gasoline: number;
   naturalGas: number;
+  water?: number;
+  diesel?: number;
+  heavyOil?: number;
+  coal?: number;
+  lpg?: number;
+  refrigerants?: { [key: string]: number };
+  detectedFuels?: string[];
   month: string;
 }
 
@@ -72,41 +79,113 @@ const FileUpload = ({ onDataExtracted }: FileUploadProps) => {
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
     const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-    // 嘗試從Excel中提取用電量、汽油使用量和天然氣使用量
-    let electricity = 0;
-    let gasoline = 0;
-    let naturalGas = 0;
-    let month = new Date().getMonth() + 1 + '月';
+    // 初始化數據
+    let extractedData: UtilityData = {
+      electricity: 0,
+      gasoline: 0,
+      naturalGas: 0,
+      water: 0,
+      diesel: 0,
+      heavyOil: 0,
+      coal: 0,
+      lpg: 0,
+      refrigerants: {},
+      detectedFuels: [],
+      month: new Date().getMonth() + 1 + '月'
+    };
 
     console.log('Excel數據:', jsonData);
+
+    // 燃料類型關鍵字映射
+    const fuelKeywords = {
+      electricity: ['電', '用電', 'electric', 'kwh', '度'],
+      gasoline: ['汽油', '油料', 'gasoline', '92', '95', '98'],
+      naturalGas: ['天然氣', '瓦斯', 'gas', 'ng', '立方', 'm3', 'm³'],
+      water: ['用水', '自來水', 'water', '立方米'],
+      diesel: ['柴油', 'diesel', '柴油車'],
+      heavyOil: ['重油', 'heavy oil', '燃料油'],
+      coal: ['煤', 'coal', '煤炭'],
+      lpg: ['液化石油氣', 'lpg', '桶裝瓦斯'],
+      'R-134a': ['r134a', 'r-134a', 'hfc134a'],
+      'R-410A': ['r410a', 'r-410a', 'hfc410a'],
+      'R-22': ['r22', 'r-22', 'hcfc22'],
+      'R-404A': ['r404a', 'r-404a'],
+      'R-407C': ['r407c', 'r-407c']
+    };
 
     // 數據提取邏輯
     jsonData.forEach((row: any) => {
       Object.keys(row).forEach(key => {
+        const keyLower = key.toLowerCase();
         const value = parseFloat(row[key]);
-        if (!isNaN(value)) {
-          if (key.includes('電') || key.includes('用電') || key.toLowerCase().includes('electric')) {
-            electricity = Math.max(electricity, value);
-          } else if (key.includes('汽油') || key.includes('油料') || key.toLowerCase().includes('gasoline')) {
-            gasoline = Math.max(gasoline, value);
-          } else if (key.includes('天然氣') || key.includes('瓦斯') || key.toLowerCase().includes('gas')) {
-            naturalGas = Math.max(naturalGas, value);
-          }
+        
+        if (!isNaN(value) && value > 0) {
+          // 檢查各種燃料類型
+          Object.entries(fuelKeywords).forEach(([fuelType, keywords]) => {
+            if (keywords.some(keyword => keyLower.includes(keyword.toLowerCase()))) {
+              if (fuelType === 'electricity') {
+                extractedData.electricity = Math.max(extractedData.electricity, value);
+                if (!extractedData.detectedFuels?.includes('電力')) {
+                  extractedData.detectedFuels?.push('電力');
+                }
+              } else if (fuelType === 'gasoline') {
+                extractedData.gasoline = Math.max(extractedData.gasoline, value);
+                if (!extractedData.detectedFuels?.includes('汽油')) {
+                  extractedData.detectedFuels?.push('汽油');
+                }
+              } else if (fuelType === 'naturalGas') {
+                extractedData.naturalGas = Math.max(extractedData.naturalGas, value);
+                if (!extractedData.detectedFuels?.includes('天然氣')) {
+                  extractedData.detectedFuels?.push('天然氣');
+                }
+              } else if (fuelType === 'water') {
+                extractedData.water = Math.max(extractedData.water || 0, value);
+                if (!extractedData.detectedFuels?.includes('用水')) {
+                  extractedData.detectedFuels?.push('用水');
+                }
+              } else if (fuelType === 'diesel') {
+                extractedData.diesel = Math.max(extractedData.diesel || 0, value);
+                if (!extractedData.detectedFuels?.includes('柴油')) {
+                  extractedData.detectedFuels?.push('柴油');
+                }
+              } else if (fuelType === 'heavyOil') {
+                extractedData.heavyOil = Math.max(extractedData.heavyOil || 0, value);
+                if (!extractedData.detectedFuels?.includes('重油')) {
+                  extractedData.detectedFuels?.push('重油');
+                }
+              } else if (fuelType === 'coal') {
+                extractedData.coal = Math.max(extractedData.coal || 0, value);
+                if (!extractedData.detectedFuels?.includes('煤')) {
+                  extractedData.detectedFuels?.push('煤');
+                }
+              } else if (fuelType === 'lpg') {
+                extractedData.lpg = Math.max(extractedData.lpg || 0, value);
+                if (!extractedData.detectedFuels?.includes('液化石油氣')) {
+                  extractedData.detectedFuels?.push('液化石油氣');
+                }
+              } else if (fuelType.startsWith('R-')) {
+                // 冷媒處理
+                if (!extractedData.refrigerants) extractedData.refrigerants = {};
+                extractedData.refrigerants[fuelType] = Math.max(extractedData.refrigerants[fuelType] || 0, value);
+                if (!extractedData.detectedFuels?.includes(`冷媒${fuelType}`)) {
+                  extractedData.detectedFuels?.push(`冷媒${fuelType}`);
+                }
+              }
+            }
+          });
         }
       });
     });
 
-    onDataExtracted({ electricity, gasoline, naturalGas, month });
+    console.log('提取的燃料數據:', extractedData);
+    onDataExtracted(extractedData);
   };
 
   const processPDFFile = async (file: File) => {
     try {
       console.log('開始解析PDF文件:', file.name);
       
-      // 將文件轉換為ArrayBuffer
       const arrayBuffer = await file.arrayBuffer();
-      
-      // 載入PDF文檔
       const loadingTask = pdfjsLib.getDocument({ 
         data: arrayBuffer,
         useWorkerFetch: false,
@@ -119,7 +198,6 @@ const FileUpload = ({ onDataExtracted }: FileUploadProps) => {
       
       let fullText = '';
       
-      // 提取所有頁面的文字
       for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
         const page = await pdf.getPage(pageNum);
         const textContent = await page.getTextContent();
@@ -133,10 +211,7 @@ const FileUpload = ({ onDataExtracted }: FileUploadProps) => {
       }
       
       console.log('完整PDF文字內容:', fullText);
-      
-      // 解析提取的文字內容
       const extractedData = parseUtilityBillText(fullText);
-      
       onDataExtracted(extractedData);
     } catch (error) {
       console.error('PDF解析錯誤:', error);
@@ -150,105 +225,77 @@ const FileUpload = ({ onDataExtracted }: FileUploadProps) => {
   const parseUtilityBillText = (text: string): UtilityData => {
     console.log('開始解析文字內容...');
     
-    let electricity = 0;
-    let gasoline = 0;
-    let naturalGas = 0;
-    let month = new Date().getMonth() + 1 + '月';
+    let extractedData: UtilityData = {
+      electricity: 0,
+      gasoline: 0,
+      naturalGas: 0,
+      water: 0,
+      diesel: 0,
+      detectedFuels: [],
+      month: new Date().getMonth() + 1 + '月'
+    };
     
     // 月份提取
     const monthMatches = text.match(/(\d{1,2})月|(\d{4})年(\d{1,2})月/);
     if (monthMatches) {
-      month = monthMatches[1] ? monthMatches[1] + '月' : monthMatches[3] + '月';
+      extractedData.month = monthMatches[1] ? monthMatches[1] + '月' : monthMatches[3] + '月';
     }
     
-    // 電力使用量提取
-    const electricityPatterns = [
-      /用電量[：:]\s*(\d+(?:\.\d+)?)/,
-      /本期用電[：:]\s*(\d+(?:\.\d+)?)/,
-      /電力消費[：:]\s*(\d+(?:\.\d+)?)/,
-      /(\d+(?:\.\d+)?)\s*度/,
-      /(\d+(?:\.\d+)?)\s*kwh/i,
-      /電費.*?(\d+(?:\.\d+)?)/,
-      /用電.*?(\d+(?:\.\d+)?)/
-    ];
+    // 使用更廣泛的模式匹配
+    const patterns = {
+      electricity: [
+        /用電量[：:]\s*(\d+(?:\.\d+)?)/,
+        /本期用電[：:]\s*(\d+(?:\.\d+)?)/,
+        /(\d+(?:\.\d+)?)\s*度/,
+        /(\d+(?:\.\d+)?)\s*kwh/i
+      ],
+      gasoline: [
+        /汽油[：:]\s*(\d+(?:\.\d+)?)/,
+        /(\d+(?:\.\d+)?)\s*公升/,
+        /(\d+(?:\.\d+)?)\s*升/,
+        /(\d+(?:\.\d+)?)\s*l\b/i
+      ],
+      naturalGas: [
+        /天然氣[：:]\s*(\d+(?:\.\d+)?)/,
+        /瓦斯[：:]\s*(\d+(?:\.\d+)?)/,
+        /(\d+(?:\.\d+)?)\s*立方公尺/,
+        /(\d+(?:\.\d+)?)\s*m³/,
+        /(\d+(?:\.\d+)?)\s*m3/
+      ],
+      water: [
+        /用水[：:]\s*(\d+(?:\.\d+)?)/,
+        /自來水[：:]\s*(\d+(?:\.\d+)?)/,
+        /(\d+(?:\.\d+)?)\s*立方米/
+      ]
+    };
     
-    for (const pattern of electricityPatterns) {
-      const match = text.match(pattern);
-      if (match) {
-        const value = parseFloat(match[1]);
-        if (value > electricity && value < 10000) {
-          electricity = value;
-          console.log('找到電力使用量:', value);
+    Object.entries(patterns).forEach(([fuelType, patternList]) => {
+      for (const pattern of patternList) {
+        const match = text.match(pattern);
+        if (match) {
+          const value = parseFloat(match[1]);
+          if (value > 0) {
+            if (fuelType === 'electricity') {
+              extractedData.electricity = Math.max(extractedData.electricity, value);
+            } else if (fuelType === 'gasoline') {
+              extractedData.gasoline = Math.max(extractedData.gasoline, value);
+            } else if (fuelType === 'naturalGas') {
+              extractedData.naturalGas = Math.max(extractedData.naturalGas, value);
+            } else if (fuelType === 'water') {
+              extractedData.water = Math.max(extractedData.water || 0, value);
+            }
+            
+            if (!extractedData.detectedFuels?.includes(fuelType)) {
+              extractedData.detectedFuels?.push(fuelType);
+            }
+            break;
+          }
         }
       }
-    }
+    });
     
-    // 汽油使用量提取
-    const gasolinePatterns = [
-      /汽油[：:]\s*(\d+(?:\.\d+)?)/,
-      /油料[：:]\s*(\d+(?:\.\d+)?)/,
-      /加油[：:]\s*(\d+(?:\.\d+)?)/,
-      /(\d+(?:\.\d+)?)\s*公升/,
-      /(\d+(?:\.\d+)?)\s*升/,
-      /(\d+(?:\.\d+)?)\s*l\b/i,
-      /gasoline.*?(\d+(?:\.\d+)?)/i
-    ];
-    
-    for (const pattern of gasolinePatterns) {
-      const match = text.match(pattern);
-      if (match) {
-        const value = parseFloat(match[1]);
-        if (value > gasoline && value < 1000) {
-          gasoline = value;
-          console.log('找到汽油使用量:', value);
-        }
-      }
-    }
-    
-    // 天然氣使用量提取
-    const naturalGasPatterns = [
-      /天然氣[：:]\s*(\d+(?:\.\d+)?)/,
-      /瓦斯[：:]\s*(\d+(?:\.\d+)?)/,
-      /氣體[：:]\s*(\d+(?:\.\d+)?)/,
-      /(\d+(?:\.\d+)?)\s*立方公尺/,
-      /(\d+(?:\.\d+)?)\s*m³/,
-      /(\d+(?:\.\d+)?)\s*m3/,
-      /gas.*?(\d+(?:\.\d+)?)/i,
-      /natural gas.*?(\d+(?:\.\d+)?)/i
-    ];
-    
-    for (const pattern of naturalGasPatterns) {
-      const match = text.match(pattern);
-      if (match) {
-        const value = parseFloat(match[1]);
-        if (value > naturalGas && value < 1000) {
-          naturalGas = value;
-          console.log('找到天然氣使用量:', value);
-        }
-      }
-    }
-    
-    // 如果沒有找到數據，嘗試更寬鬆的數字匹配
-    if (electricity === 0 && gasoline === 0 && naturalGas === 0) {
-      console.log('使用寬鬆匹配模式...');
-      
-      const numbers = text.match(/\d+(?:\.\d+)?/g);
-      if (numbers) {
-        const numValues = numbers.map(n => parseFloat(n)).filter(n => n > 0 && n < 10000);
-        numValues.sort((a, b) => b - a);
-        
-        if (numValues.length >= 1) electricity = numValues[0];
-        if (numValues.length >= 2) gasoline = numValues[1];
-        if (numValues.length >= 3) naturalGas = numValues[2];
-        
-        console.log('啟發式分類結果:', { electricity, gasoline, naturalGas });
-      }
-    }
-    
-    const result = { electricity, gasoline, naturalGas, month };
-    console.log('最終解析結果:', result);
-    
-    return result;
+    console.log('最終解析結果:', extractedData);
+    return extractedData;
   };
 
   const removeFile = () => {
@@ -275,7 +322,7 @@ const FileUpload = ({ onDataExtracted }: FileUploadProps) => {
           上傳水電費單
         </CardTitle>
         <CardDescription>
-          支援PDF或Excel格式的水電費帳單，系統將自動提取用量數據
+          支援PDF或Excel格式的水電費帳單，系統將自動提取用量數據（支援多種燃料類型）
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -285,6 +332,7 @@ const FileUpload = ({ onDataExtracted }: FileUploadProps) => {
             <div className="space-y-2">
               <p className="text-gray-600">點擊上傳或拖拽檔案到此處</p>
               <p className="text-sm text-gray-500">支援 PDF、Excel (.xlsx/.xls) 格式</p>
+              <p className="text-xs text-gray-400">可識別：電力、汽油、天然氣、用水、柴油、重油、煤、液化石油氣、冷媒等</p>
             </div>
             <Input
               ref={fileInputRef}
