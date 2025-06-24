@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -55,6 +54,8 @@ const CarbonFee = () => {
     
     // 冷媒排放計算（使用GWP值）
     let refrigerantEmissions = 0;
+    const refrigerantDetails: { [key: string]: number } = {};
+    
     Object.entries(refrigerants).forEach(([type, amount]) => {
       const gwpValues: { [key: string]: number } = {
         'R-134a': 1430,
@@ -65,10 +66,15 @@ const CarbonFee = () => {
         'R-12': 10900,
         'R-32': 675
       };
-      if (gwpValues[type]) {
-        refrigerantEmissions += (amount * gwpValues[type]) / 1000;
+      if (gwpValues[type] && amount > 0) {
+        const emission = (amount * gwpValues[type]) / 1000;
+        refrigerantEmissions += emission;
+        refrigerantDetails[type] = emission;
+        console.log(`冷媒 ${type}: ${amount} kg * ${gwpValues[type]} GWP = ${emission.toFixed(6)} 公噸 CO2e`);
       }
     });
+    
+    console.log('總冷媒排放:', refrigerantEmissions);
     
     return {
       electricity: electricityEmissions,
@@ -80,6 +86,7 @@ const CarbonFee = () => {
       coal: coalEmissions,
       lpg: lpgEmissions,
       refrigerant: refrigerantEmissions,
+      refrigerantDetails,
       total: electricityEmissions + gasolineEmissions + naturalGasEmissions + waterEmissions + 
              dieselEmissions + heavyOilEmissions + coalEmissions + lpgEmissions + refrigerantEmissions,
     };
@@ -104,20 +111,55 @@ const CarbonFee = () => {
   const emissions = calculateEmissions();
   const totalCarbonFee = emissions.total * carbonFeeRate;
 
-  // 圖表數據 - 只顯示有數值的項目
-  const emissionData = [
-    { name: "電力", value: Number(emissions.electricity.toFixed(3)), color: "#3B82F6" },
-    { name: "汽油", value: Number(emissions.gasoline.toFixed(3)), color: "#EF4444" },
-    { name: "天然氣", value: Number(emissions.naturalGas.toFixed(3)), color: "#F59E0B" },
-    { name: "用水", value: Number(emissions.water.toFixed(3)), color: "#06B6D4" },
-    { name: "柴油", value: Number(emissions.diesel.toFixed(3)), color: "#8B5CF6" },
-    { name: "重油", value: Number(emissions.heavyOil.toFixed(3)), color: "#F97316" },
-    { name: "煤", value: Number(emissions.coal.toFixed(3)), color: "#374151" },
-    { name: "液化石油氣", value: Number(emissions.lpg.toFixed(3)), color: "#10B981" },
-    { name: "冷媒", value: Number(emissions.refrigerant.toFixed(3)), color: "#EC4899" },
-  ].filter(item => item.value > 0);
+  // 圖表數據 - 包含個別冷媒項目
+  const buildEmissionData = () => {
+    const data = [];
+    
+    // 基本能源項目
+    if (emissions.electricity > 0) {
+      data.push({ name: "電力", value: Number(emissions.electricity.toFixed(3)), color: "#3B82F6" });
+    }
+    if (emissions.gasoline > 0) {
+      data.push({ name: "汽油", value: Number(emissions.gasoline.toFixed(3)), color: "#EF4444" });
+    }
+    if (emissions.naturalGas > 0) {
+      data.push({ name: "天然氣", value: Number(emissions.naturalGas.toFixed(3)), color: "#F59E0B" });
+    }
+    if (emissions.water > 0) {
+      data.push({ name: "用水", value: Number(emissions.water.toFixed(3)), color: "#06B6D4" });
+    }
+    if (emissions.diesel > 0) {
+      data.push({ name: "柴油", value: Number(emissions.diesel.toFixed(3)), color: "#8B5CF6" });
+    }
+    if (emissions.heavyOil > 0) {
+      data.push({ name: "重油", value: Number(emissions.heavyOil.toFixed(3)), color: "#F97316" });
+    }
+    if (emissions.coal > 0) {
+      data.push({ name: "煤", value: Number(emissions.coal.toFixed(3)), color: "#374151" });
+    }
+    if (emissions.lpg > 0) {
+      data.push({ name: "液化石油氣", value: Number(emissions.lpg.toFixed(3)), color: "#10B981" });
+    }
+    
+    // 個別冷媒項目
+    if (emissions.refrigerantDetails) {
+      Object.entries(emissions.refrigerantDetails).forEach(([type, emission], index) => {
+        if (emission > 0) {
+          data.push({ 
+            name: `冷媒${type}`, 
+            value: Number(emission.toFixed(6)), 
+            color: `hsl(${310 + index * 30}, 70%, 50%)` 
+          });
+        }
+      });
+    }
+    
+    console.log('構建的圖表數據:', data);
+    return data;
+  };
 
-  // 基準情境數據
+  const emissionData = buildEmissionData();
+
   const baseScenario = {
     id: 'base',
     name: '基準情境',
@@ -130,7 +172,6 @@ const CarbonFee = () => {
     carbonFee: totalCarbonFee
   };
 
-  // 報告數據
   const reportData = {
     carbonEmissions: emissions,
     carbonFee: totalCarbonFee,
@@ -165,7 +206,6 @@ const CarbonFee = () => {
           <FileUpload onDataExtracted={handleFileDataExtracted} />
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
           <StatsCard
             title="總碳排放量"
@@ -214,7 +254,6 @@ const CarbonFee = () => {
 
           <TabsContent value="calculator" className="space-y-6">
             <div className="grid lg:grid-cols-2 gap-8">
-              {/* 計算器 */}
               <Card className="h-fit">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -318,6 +357,35 @@ const CarbonFee = () => {
                     </div>
                   </div>
 
+                  {/* 冷媒輸入區域 */}
+                  {Object.keys(refrigerants).length > 0 && (
+                    <div className="pt-4 border-t border-gray-200">
+                      <h4 className="flex items-center gap-2 font-medium text-gray-700 mb-3">
+                        <Snowflake className="w-4 h-4 text-cyan-500" />
+                        冷媒使用量 (公斤)
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {Object.entries(refrigerants).map(([type, amount]) => (
+                          <div key={type} className="space-y-2">
+                            <Label htmlFor={`refrigerant-${type}`}>{type}</Label>
+                            <Input
+                              id={`refrigerant-${type}`}
+                              type="number"
+                              step="0.01"
+                              value={amount}
+                              onChange={(e) => setRefrigerants({
+                                ...refrigerants,
+                                [type]: Number(e.target.value)
+                              })}
+                              placeholder={`例如: 0.14`}
+                              className="focus:ring-emerald-500 focus:border-emerald-500"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* 計算結果 */}
                   <div className="pt-6 border-t border-gray-200">
                     <div className="bg-emerald-50 p-4 rounded-lg">
@@ -327,6 +395,12 @@ const CarbonFee = () => {
                           <span>總碳排放量:</span>
                           <span className="font-medium">{emissions.total.toFixed(3)} 公噸 CO2e</span>
                         </div>
+                        {emissions.refrigerant > 0 && (
+                          <div className="flex justify-between">
+                            <span>冷媒排放量:</span>
+                            <span className="font-medium">{emissions.refrigerant.toFixed(6)} 公噸 CO2e</span>
+                          </div>
+                        )}
                         <div className="flex justify-between">
                           <span>碳費費率:</span>
                           <span className="font-medium">NT$ {carbonFeeRate}/公噸</span>
@@ -394,7 +468,6 @@ const CarbonFee = () => {
           </TabsContent>
         </Tabs>
 
-        {/* 減碳建議 */}
         {emissions.total > 0 && (
           <Card className="mt-8">
             <CardHeader>
