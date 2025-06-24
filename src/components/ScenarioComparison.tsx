@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -269,6 +268,7 @@ const ScenarioComparison = ({ baseScenario }: ScenarioComparisonProps) => {
             title="情境碳排放對比"
             description="各情境的碳排放量和碳費比較"
             type="bar"
+            dataKeys={["碳排放量", "碳費"]}
           />
           
           {getCostSavingsData().length > 0 && (
@@ -277,6 +277,7 @@ const ScenarioComparison = ({ baseScenario }: ScenarioComparisonProps) => {
               title="減碳效益分析"
               description="相較基準情境的節省金額和減排比例"
               type="bar"
+              dataKeys={["節省金額", "減排比例"]}
             />
           )}
         </div>

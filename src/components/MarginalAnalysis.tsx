@@ -153,7 +153,7 @@ const MarginalAnalysis = ({ currentEmissions, currentCarbonFee }: MarginalAnalys
     const annualSavings = currentCarbonFee * clampedReduction;
 
     return Array.from({ length: analysisYears }, (_, index) => ({
-      年份: `第${index + 1}年`,
+      name: `第${index + 1}年`,
       節省金額: Number((annualSavings * Math.pow(1 + carbonFeeGrowthRate / 100, index) / 1000).toFixed(1)),
       累積節省: Number((annualSavings * ((Math.pow(1 + carbonFeeGrowthRate / 100, index + 1) - 1) / (carbonFeeGrowthRate / 100)) / 1000).toFixed(1))
     }));
@@ -319,6 +319,7 @@ const MarginalAnalysis = ({ currentEmissions, currentCarbonFee }: MarginalAnalys
             title="累積投資效益分析"
             description="按ROI排序的累積投資和減排效果"
             type="bar"
+            dataKeys={["累積投資", "累積減排", "累積節省", "ROI"]}
           />
           
           <CarbonChart
@@ -326,6 +327,7 @@ const MarginalAnalysis = ({ currentEmissions, currentCarbonFee }: MarginalAnalys
             title="年度節省金額預測"
             description={`未來${analysisYears}年的節省金額趨勢（碳費年增長${carbonFeeGrowthRate}%）`}
             type="line"
+            dataKeys={["節省金額", "累積節省"]}
           />
         </div>
       )}

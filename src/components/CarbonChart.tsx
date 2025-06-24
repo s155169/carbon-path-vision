@@ -5,8 +5,8 @@ import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell, 
 
 interface CarbonData {
   name: string;
-  value: number;
-  color?: string;
+  value?: number;
+  [key: string]: any;
 }
 
 interface CarbonChartProps {
@@ -14,12 +14,27 @@ interface CarbonChartProps {
   title: string;
   description: string;
   type?: "bar" | "pie" | "line" | "area";
+  dataKeys?: string[];
 }
 
-const CarbonChart = ({ data, title, description, type = "bar" }: CarbonChartProps) => {
+const CarbonChart = ({ data, title, description, type = "bar", dataKeys }: CarbonChartProps) => {
+  // Determine which keys to use for the chart
+  const getDataKeys = () => {
+    if (dataKeys) return dataKeys;
+    if (data.length === 0) return [];
+    
+    const firstItem = data[0];
+    return Object.keys(firstItem).filter(key => 
+      key !== 'name' && typeof firstItem[key] === 'number'
+    );
+  };
+
+  const keys = getDataKeys();
+  const primaryKey = keys[0] || 'value';
+
   const chartConfig = {
-    value: {
-      label: "碳排放量 (公噸 CO2e)",
+    [primaryKey]: {
+      label: primaryKey,
       color: "#059669",
     },
   };
@@ -34,7 +49,7 @@ const CarbonChart = ({ data, title, description, type = "bar" }: CarbonChartProp
               cx="50%"
               cy="50%"
               outerRadius={80}
-              dataKey="value"
+              dataKey={primaryKey}
               label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
             >
               {data.map((entry, index) => (
@@ -51,7 +66,15 @@ const CarbonChart = ({ data, title, description, type = "bar" }: CarbonChartProp
             <XAxis dataKey="name" />
             <YAxis />
             <ChartTooltip content={<ChartTooltipContent />} />
-            <Line type="monotone" dataKey="value" stroke="#059669" strokeWidth={2} />
+            {keys.map((key, index) => (
+              <Line 
+                key={key}
+                type="monotone" 
+                dataKey={key} 
+                stroke={`hsl(${160 + index * 60}, 70%, 50%)`} 
+                strokeWidth={2} 
+              />
+            ))}
           </LineChart>
         );
       
@@ -61,7 +84,7 @@ const CarbonChart = ({ data, title, description, type = "bar" }: CarbonChartProp
             <XAxis dataKey="name" />
             <YAxis />
             <ChartTooltip content={<ChartTooltipContent />} />
-            <Area type="monotone" dataKey="value" stroke="#059669" fill="#059669" fillOpacity={0.6} />
+            <Area type="monotone" dataKey={primaryKey} stroke="#059669" fill="#059669" fillOpacity={0.6} />
           </AreaChart>
         );
       
@@ -71,7 +94,14 @@ const CarbonChart = ({ data, title, description, type = "bar" }: CarbonChartProp
             <XAxis dataKey="name" />
             <YAxis />
             <ChartTooltip content={<ChartTooltipContent />} />
-            <Bar dataKey="value" fill="#059669" radius={[4, 4, 0, 0]} />
+            {keys.map((key, index) => (
+              <Bar 
+                key={key}
+                dataKey={key} 
+                fill={`hsl(${160 + index * 60}, 70%, 50%)`} 
+                radius={[4, 4, 0, 0]} 
+              />
+            ))}
           </BarChart>
         );
     }
