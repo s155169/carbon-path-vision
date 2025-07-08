@@ -164,8 +164,8 @@ const Chatbot = () => {
         </div>
       </CardHeader>
 
-      <CardContent className="p-0 h-full flex flex-col">
-        <ScrollArea className="flex-1 p-4">
+      <CardContent className="p-0 flex flex-col" style={{ height: 'calc(100% - 80px)' }}>
+        <ScrollArea className="flex-1 p-4 pb-2">
           <div className="space-y-4">
             {messages.map((message) => (
               <div
@@ -206,7 +206,7 @@ const Chatbot = () => {
           <div ref={messagesEndRef} />
         </ScrollArea>
 
-        <div className="border-t p-4">
+        <div className="border-t p-3 mt-auto bg-white">
           <div className="flex gap-2">
             <Input
               value={inputValue}
