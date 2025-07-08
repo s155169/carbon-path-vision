@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,7 +17,7 @@ const Chatbot = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: '您好！我是碳管理智慧助手。我可以幫助您解答碳費計算、減碳策略等相關問題。請問有什麼可以協助您的嗎？',
+      text: '您好！我是碳管理智慧助手。我可以幫助您解答碳費計算、減碳策略、排放範疇等相關問題。請問有什麼可以協助您的嗎？',
       sender: 'bot',
       timestamp: new Date()
     }
@@ -37,6 +36,39 @@ const Chatbot = () => {
 
   const getBotResponse = (userMessage: string): string => {
     const message = userMessage.toLowerCase();
+
+    // 範疇相關問題
+    if (message.includes('範疇一') || message.includes('scope 1') || message.includes('直接排放')) {
+      return '範疇一（Scope 1）是指公司自有或控制的直接溫室氣體排放。包括公司擁有或控制的燃燒源產生的排放，例如公司自有車輛、鍋爐、發電機等設備的燃料燃燒排放。';
+    }
+
+    if (message.includes('範疇二') || message.includes('scope 2') || message.includes('電力') || message.includes('蒸氣')) {
+      return '範疇二（Scope 2）是指公司購買的電力、蒸氣等間接排放。主要包括外購電力、熱力、蒸氣或冷卻所產生的間接溫室氣體排放。雖然排放發生在電力公司，但由於是您購買使用，所以計入您的排放範疇。';
+    }
+
+    if (message.includes('範疇三') || message.includes('scope 3') || message.includes('供應鏈')) {
+      return '範疇三（Scope 3）是指供應鏈相關的其他間接排放。包括上游的原料採購、運輸，以及下游的產品使用、廢棄處理等整個價值鏈的排放。這是最複雜但通常佔比最大的排放範疇。';
+    }
+
+    // 溫室氣體相關
+    if (message.includes('溫室氣體') || message.includes('greenhouse gas') || message.includes('ghg')) {
+      return '溫室氣體是會造成溫室效應的氣體，主要包括二氧化碳(CO2)、甲烷(CH4)、氧化亞氮(N2O)、氫氟碳化物(HFCs)、全氟碳化物(PFCs)、六氟化硫(SF6)等。其中二氧化碳是最主要的溫室氣體。';
+    }
+
+    // 排放係數相關
+    if (message.includes('排放係數') || message.includes('emission factor') || message.includes('係數')) {
+      return '排放係數是用來計算排放量的參考數值，表示每單位活動數據對應的溫室氣體排放量。請依照環保署公告的最新排放係數填寫，確保計算結果的準確性和符合法規要求。';
+    }
+
+    // 用電量填寫
+    if (message.includes('用電量') || message.includes('電量') || message.includes('度數') || message.includes('kwh')) {
+      return '用電量請填寫台電帳單上的用電度數，單位為 kWh（千瓦小時）。您可以從每月的電費帳單中找到這個數據，通常會顯示為「本期用電度數」或類似字樣。';
+    }
+
+    // 車輛油耗填寫
+    if (message.includes('車輛') || message.includes('油耗') || message.includes('汽油') || message.includes('柴油') || message.includes('加油')) {
+      return '車輛油耗請填寫年度油耗總公升數，您可以統計加油發票的合計金額再換算，或直接記錄每次加油的公升數加總。建議保留加油收據以便準確計算。';
+    }
 
     // 碳费相关问题
     if (message.includes('碳费') || message.includes('碳價') || message.includes('价格')) {
@@ -64,7 +96,7 @@ const Chatbot = () => {
     }
 
     // 默认回复
-    return '感謝您的提問！我主要可以協助您了解碳費計算、減碳策略、排放源識別等議題。如果您有具體問題，請告訴我，我會盡力提供相關資訊。您也可以直接使用我們的各項功能來獲得更詳細的分析。';
+    return '感謝您的提問！我主要可以協助您了解碳費計算、減碳策略、排放範疇（Scope 1、2、3）、溫室氣體、排放係數等議題。如果您有具體問題，請告訴我，我會盡力提供相關資訊。您也可以直接使用我們的各項功能來獲得更詳細的分析。';
   };
 
   const handleSendMessage = async () => {
