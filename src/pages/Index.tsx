@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calculator, TrendingDown, Target, Leaf, ArrowRight, BarChart3, Globe, Users } from "lucide-react";
@@ -6,6 +5,7 @@ import { Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import StatsCard from "@/components/StatsCard";
 import CarbonChart from "@/components/CarbonChart";
+import Chatbot from "@/components/Chatbot";
 
 const Index = () => {
   const features = [
@@ -192,6 +192,9 @@ const Index = () => {
           </div>
         </div>
       </footer>
+
+      {/* Chatbot */}
+      <Chatbot />
     </div>
   );
 };
