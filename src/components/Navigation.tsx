@@ -1,7 +1,7 @@
 
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Leaf, Calculator, TrendingDown, Target, Home } from "lucide-react";
+import { Leaf, Calculator, TrendingDown, Target, Home, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const Navigation = () => {
@@ -12,6 +12,7 @@ const Navigation = () => {
     { path: "/carbon-fee", label: "碳費模擬", icon: Calculator },
     { path: "/reduction-path", label: "減碳路徑", icon: TrendingDown },
     { path: "/reduction-actions", label: "減碳行動", icon: Target },
+    { path: "/guidelines", label: "盤查指引", icon: BookOpen },
   ];
 
   return (
