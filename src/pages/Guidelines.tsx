@@ -7,9 +7,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { 
-  FileText, 
-  Download, 
-  Eye, 
   GitCompare, 
   ArrowLeft,
   ChevronRight,
@@ -17,6 +14,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import Navigation from '@/components/Navigation';
+import PdfViewer from '@/components/PdfViewer';
 import { useGuideline, Industry } from '@/features/guidelines/hooks/useGuideline';
 
 const Guidelines = () => {
@@ -119,7 +117,7 @@ const Guidelines = () => {
         </div>
 
         {data && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Left Column - Process Checklist */}
             <div className="lg:col-span-1">
               <Card className="h-fit">
@@ -174,88 +172,24 @@ const Guidelines = () => {
               </Card>
             </div>
 
-            {/* Middle Column - Templates */}
-            <div className="lg:col-span-1">
-              <Card className="h-fit">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-blue-600" />
-                    報告書範本
-                  </CardTitle>
-                  <p className="text-sm text-gray-600">
-                    選擇適合的子行業範本下載或預覽
-                  </p>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {data.templates.map((template) => (
-                    <div key={template.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                      <h4 className="font-medium text-gray-900 mb-3">{template.name}</h4>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex items-center gap-2 text-xs"
-                          onClick={() => window.open(template.docxUrl, '_blank')}
-                        >
-                          <Download className="w-3 h-3" />
-                          下載 DOCX
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="flex items-center gap-2 text-xs"
-                          onClick={() => window.open(template.markdownUrl, '_blank')}
-                        >
-                          <Eye className="w-3 h-3" />
-                          預覽 Markdown
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </div>
-
             {/* Right Column - PDF Viewer */}
             <div className="lg:col-span-1">
-              <Card className="h-fit">
+              <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <BookOpen className="w-5 h-5 text-purple-600" />
-                    PDF 指引文件
+                    {data.name}盤查指引文件
                   </CardTitle>
                   <p className="text-sm text-gray-600">
-                    當前頁面：第 {currentPdfPage} 頁
+                    點擊左側步驟可快速跳轉到對應頁面
                   </p>
                 </CardHeader>
-                <CardContent>
-                  <div className="bg-gray-100 rounded-lg h-96 flex items-center justify-center">
-                    <div className="text-center text-gray-500">
-                      <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p className="font-medium mb-2">{data.name}盤查指引</p>
-                      <p className="text-sm mb-4">PDF 檢視器將在此顯示</p>
-                      <p className="text-xs">
-                        檔案路徑: /assets/guidelines/{data.industry}.pdf
-                      </p>
-                      <div className="mt-4 flex justify-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setCurrentPdfPage(Math.max(1, currentPdfPage - 1))}
-                          disabled={currentPdfPage <= 1}
-                        >
-                          上一頁
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setCurrentPdfPage(currentPdfPage + 1)}
-                        >
-                          下一頁
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
+                <CardContent className="p-0">
+                  <PdfViewer
+                    industry={data.industry}
+                    currentPage={currentPdfPage}
+                    onPageChange={setCurrentPdfPage}
+                  />
                 </CardContent>
               </Card>
             </div>
